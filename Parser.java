@@ -82,7 +82,7 @@ public class Parser {
 	
 	
 	
-	private LocalDate parseSmallToken(String token) {
+	public LocalDate parseSmallToken(String token) {
 		token = token.strip();
 		var tempDates = new TreeSet<LocalDate>();
 		if (token.length() <= 6) return null;
