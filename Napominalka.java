@@ -15,6 +15,8 @@ public class Napominalka {
 	private float scaleRatio = Toolkit.getDefaultToolkit().getScreenResolution()/96;
 	private float scaleAdditional = 2.5f;
 	private float newFontSize = defFont.getSize() * scaleRatio * scaleAdditional;
+	private JFrame frame;
+	private Image image = Toolkit.getDefaultToolkit().getImage("icon.png");
 	
 	// private final Font scaledFont = defFont.deriveFont(newFontSize);
 	private final Font scaledFont = new Font("Calibri", Font.PLAIN, (int)newFontSize);
@@ -29,27 +31,20 @@ public class Napominalka {
 	}
 	
 	private void buildGui() {
-		// UIManager.put("defaultFont", defFont.deriveFont(30f));
-		// UIManager.getLookAndFeelDefaults().put("defaultFont", defFont.deriveFont(30f));
-		// UIManager.getDefaults().put("defaultFont", defFont.deriveFont(30f));
-		/* UIManager.put("TextField.font", new Font("Arial", Font.BOLD, 17));
-		UIManager.put("MenuItem.font", new Font("Arial", Font.BOLD, 17));
-		UIManager.put("Menu.font", new Font("Arial", Font.BOLD, 17));
-		UIManager.put("PopupMenu.font", new Font("Arial", Font.BOLD, 17)); */
 		setUIFont(new FontUIResource(scaledFont));
-		var frame = new JFrame("Напоминалка");
+		frame = new JFrame("Напоминалка");
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
-		frame.setSize(640, 480);
+		frame.setIconImage(image);
 		// mainWindow.setLayout(new GridLayout(datesNames.size(),2));
 		BorderLayout layout = new BorderLayout();
 		JPanel background = new JPanel(layout);
 		background.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
 		
 		GridLayout grid = new GridLayout(datesNames.size(), 2);
-		grid.setVgap(1);
-		grid.setHgap(10);
+		grid.setVgap(10);
+		grid.setHgap(20);
 		var mainPanel = new JPanel(grid);
 		background.add(BorderLayout.CENTER, mainPanel);
 		frame.getContentPane().add(background);
@@ -62,6 +57,27 @@ public class Napominalka {
 			mainPanel.add(textField);
 			textField = new JTextField(entry.getValue().toString());
 			textField.setEditable(false);
+			textField.addActionListener(ae -> {
+				JTextField c = (JTextField) ae.getSource();
+				c.setEditable(false);
+				c.getCaret().setVisible(false);
+			});
+			textField.addMouseListener(new MouseListener() {
+				public void mouseClicked(MouseEvent e) {
+					if (e.getButton()==1 && e.getClickCount()>1) {
+						JTextField c = (JTextField) e.getComponent();
+						if (!c.isEditable()) {
+							c.setEditable(true);
+							c.getCaret().setVisible(true);
+						}
+					}
+				}
+				public void mouseEntered(MouseEvent e) {}
+				public void mouseExited(MouseEvent e) {}
+				public void mousePressed(MouseEvent e) {}
+				public void mouseReleased(MouseEvent e) {}
+			});
+			
 			mainPanel.add(textField);
 			
 		}
@@ -78,16 +94,7 @@ public class Napominalka {
 			
 			
 			SystemTray tray = SystemTray.getSystemTray();
-			Image image = Toolkit.getDefaultToolkit().getImage("icon.png");
 			
-			// create a action listener to listen for default action executed on the tray icon
-			/* ActionListener listener = new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					System.out.println("listenre action fired");
-					// execute default action of the application
-					// ...
-				}
-			}; */
 			
 			PopupMenu popup = new PopupMenu("Название попуп меню");
 			popup.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.6f));
@@ -108,7 +115,10 @@ public class Napominalka {
 			trayIcon.setImageAutoSize(true);
 			trayIcon.addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
-					System.out.println("Cliked!"+e.getButton());
+					if (e.getButton()==1) {
+						if (frame.isVisible()) frame.setVisible(false);
+						else frame.setVisible(true);
+					}
 				}
 				public void mouseEntered(MouseEvent e) {}
 				public void mouseExited(MouseEvent e) {}
