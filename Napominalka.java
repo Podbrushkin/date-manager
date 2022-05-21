@@ -26,15 +26,30 @@ public class Napominalka {
 	
 	public static void main(String[] args) {
 		new Napominalka().buildGui();
+		
 	}
 	
 	private void buildGui() {
 		setUIFont(new FontUIResource(scaledFont));
+		Runtime.getRuntime().addShutdownHook(new Thread(()->new Exporter().writeToFile(container.getDatesNames())));
+		addTrayIcon();
 		frame = new JFrame("Напоминалка");
-		
+		frame.addWindowStateListener(new WindowStateListener() {
+		   public void windowStateChanged(WindowEvent we) {
+				if (we.getNewState() == JFrame.ICONIFIED) {
+					frame.setVisible(false);
+					frame.setExtendedState(JFrame.NORMAL);
+				} else
+				if (we.getNewState() == WindowEvent.WINDOW_CLOSING) {
+					System.out.println("FIRE!");
+					new Exporter().writeToFile(container.getDatesNames());
+				}
+		   }
+		});
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
 		frame.setIconImage(image);
+		
 		// mainWindow.setLayout(new GridLayout(datesNames.size(),2));
 		BorderLayout layout = new BorderLayout();
 		JPanel background = new JPanel(layout);
@@ -51,12 +66,25 @@ public class Napominalka {
 		while (!tmpMap.isEmpty()) {
 			var entry = tmpMap.pollFirstEntry();
 			var textField = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
+			textField.setMargin(new Insets(20,20,0,0));
 			textField.setEditable(false);
+			
+			// System.out.println("getMargin:"+textField.getMargin());
 			mainPanel.add(textField);
 			textFields.add(textField);
 			
 			textField = new JTextField(entry.getValue().toString());
+			textField.setMargin(new Insets(20,20,0,0));
 			textField.setEditable(false);
+			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
+				textField.setBackground(new Color(50,255,50));
+				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue().toString());
+				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
+			} 
+			else if (entry.getKey().withYear(0).equals(container.getClosestDateInFuture().getKey().withYear(0))) {
+				textField.setBackground(new Color(200,200,200));
+			}
+			
 			textField.addActionListener(ae -> {
 				JTextField c = (JTextField) ae.getSource();
 				c.setEditable(false);
@@ -70,6 +98,7 @@ public class Napominalka {
 						if (!c.isEditable()) {
 							c.setEditable(true);
 							c.getCaret().setVisible(true);
+							// c.setBackground(null);
 						}
 					}
 				}
@@ -83,7 +112,7 @@ public class Napominalka {
 			textFields.add(textField);
 			
 		}
-		addTrayIcon();
+		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
@@ -101,6 +130,7 @@ public class Napominalka {
 				if (changed) changes++;
 			}
 		}
+		if (changes > 0) new Exporter().writeToFile(container.getDatesNames());
 		System.out.println("Number of changes: "+changes);
 	}
 	
@@ -116,13 +146,16 @@ public class Napominalka {
 			PopupMenu popup = new PopupMenu("Название попуп меню");
 			popup.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.6f));
 			
-			MenuItem mainItem = new MenuItem("Also Exit");
+			MenuItem mainItem = new MenuItem("Развернуть");
 			
-			mainItem.addActionListener((ae) -> System.exit(0));
+			mainItem.addActionListener((ae) -> {
+				frame.setVisible(true);
+				frame.setExtendedState(JFrame.NORMAL);
+			});
 			popup.add(mainItem);
 			
 			popup.addSeparator();
-			MenuItem exitItem = new MenuItem("Exit");
+			MenuItem exitItem = new MenuItem("Выйти");
 			
 			exitItem.addActionListener((ae) -> System.exit(0));
 			popup.add(exitItem);
@@ -138,7 +171,12 @@ public class Napominalka {
 				public void mouseClicked(MouseEvent e) {
 					if (e.getButton()==1) {
 						if (frame.isVisible()) frame.setVisible(false);
-						else frame.setVisible(true);
+						else {
+							frame.setVisible(true);
+							frame.setExtendedState(JFrame.NORMAL);
+							// frame.setAlwaysOnTop(true);
+							// frame.setAlwaysOnTop(false);
+						}
 					}
 				}
 				public void mouseEntered(MouseEvent e) {}

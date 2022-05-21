@@ -8,12 +8,17 @@ public class DatesNamesContainer {
 	private Parser parser = new Parser();
 	private TreeMap<LocalDate, String> datesNames = new TreeMap<>();
 	
+	public DatesNamesContainer() {
+		fillDatesNames();
+		System.out.println("datesNames.size():"+datesNames.size());
+	}
+	
 	private void fillDatesNames() {
 		datesNames.putAll(parser.parseTsv(Path.of(".\\tsv.txt")));
 	}
 	
 	public SortedMap<LocalDate, String> getDatesNames() {
-		if (datesNames.size() == 0) fillDatesNames();
+		// if (datesNames.size() == 0) fillDatesNames();
 		return Collections.unmodifiableSortedMap(datesNames);
 	}
 	
