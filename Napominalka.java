@@ -5,6 +5,7 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.TreeMap;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,11 +64,14 @@ public class Napominalka {
 		background.add(BorderLayout.CENTER, mainPanel);
 		frame.getContentPane().add(background);
 		
-		textFields = addTextfieldsToPanel(mainPanel);
+		textFields = addTextfieldsToPanelNew(mainPanel);
 		var addButton = new JButton("+");
 		addButton.setFont(scaledFont.deriveFont(Font.BOLD, scaledFont.getSize()*1.2f));
 		addButton.setMargin(new Insets(20,0,0,0));
-		// background.add(BorderLayout.SOUTH, addButton);
+		addButton.addActionListener((ae) -> {
+			
+		});
+		background.add(BorderLayout.SOUTH, addButton);
 		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
@@ -75,8 +79,15 @@ public class Napominalka {
 	}
 	
 	private ArrayList<JTextField> addTextfieldsToPanelNew(JPanel mainPanel) {
-		
-		return null;
+		var tmpMap = new TreeMap<>(container.getDatesNames());
+		var tfields = new ArrayList<JTextField>();
+		while (!tmpMap.isEmpty()) {
+			var myjp = new MyJPanel(tmpMap.pollFirstEntry());
+			tfields.add(myjp.getDateTextField());
+			tfields.add(myjp.getNameTextField());
+			mainPanel.add(myjp);
+		}
+		return tfields;
 		
 	}
 	
@@ -254,5 +265,53 @@ public class Napominalka {
 		public void mouseReleased(MouseEvent e) {}
 	}
 
-
+	private class MyJPanel extends JPanel {
+		private JTextField dateTf;
+		private JTextField nameTf;
+		
+		public MyJPanel(Map.Entry<LocalDate, String> entry) {
+			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")), 10);
+			dateTf.setMargin(new Insets(20,20,0,0));
+			dateTf.setEditable(false);
+			dateTf.addMouseListener(new EditMouseListener());
+			dateTf.addActionListener(ae -> {
+				JTextField c = (JTextField) ae.getSource();
+				var parser = new Parser();
+				if (parser.isValidDate(c.getText())) {
+					c.setEditable(false);
+					c.getCaret().setVisible(false);
+					saveChangesToContainer();
+					mainPanel.removeAll();
+					textFields = addTextfieldsToPanelNew(mainPanel);
+					mainPanel.revalidate();
+				}
+			});
+			
+			this.nameTf = new JTextField(entry.getValue().toString(), 10);
+			nameTf.setMargin(new Insets(20,20,0,0));
+			nameTf.setEditable(false);
+			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
+				nameTf.setBackground(new Color(50,255,50));
+				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue().toString());
+				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
+			} 
+			else if (entry.getKey().withYear(0).equals(container.getClosestDateInFuture().getKey().withYear(0))) {
+				nameTf.setBackground(new Color(200,200,200));
+			}
+			
+			nameTf.addActionListener(ae -> {
+				JTextField c = (JTextField) ae.getSource();
+				c.setEditable(false);
+				c.getCaret().setVisible(false);
+				saveChangesToContainer();
+			});
+			nameTf.addMouseListener(new EditMouseListener());
+			
+			this.add(dateTf);
+			this.add(nameTf);
+		}
+		
+		public JTextField getDateTextField() { return dateTf; }
+		public JTextField getNameTextField() { return nameTf; }
+	}
 }
