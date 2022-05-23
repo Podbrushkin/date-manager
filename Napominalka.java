@@ -32,7 +32,10 @@ public class Napominalka {
 	
 	private void buildGui() {
 		setUIFont(new FontUIResource(scaledFont));
-		Runtime.getRuntime().addShutdownHook(new Thread(()->new Exporter().writeToFile(container.getDatesNames())));
+		Runtime.getRuntime().addShutdownHook(new Thread(()->{
+		new Exporter().writeToFile(container.getDatesNames());
+		// System.out.println("textFields.size():"+textFields.size());
+	}));
 		addTrayIcon();
 		frame = new JFrame("Напоминалка");
 		frame.addWindowStateListener(new WindowStateListener() {
@@ -51,15 +54,19 @@ public class Napominalka {
 		frame.setResizable(false);
 		frame.setIconImage(image);
 		
+		
+		
 		// mainWindow.setLayout(new GridLayout(datesNames.size(),2));
 		BorderLayout layout = new BorderLayout();
 		JPanel background = new JPanel(layout);
 		background.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
 		
-		GridLayout grid = new GridLayout(container.getDatesNames().size(), 2);
+		// GridLayout grid = new GridLayout(container.getDatesNames().size(), 2);
+		GridLayout grid = new GridLayout(0, 1);
 		grid.setVgap(10);
 		grid.setHgap(20);
 		mainPanel = new JPanel(grid);
+		// mainPanel = new JPanel();
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(0,0,20,0));
 		background.add(BorderLayout.CENTER, mainPanel);
 		frame.getContentPane().add(background);
@@ -69,7 +76,14 @@ public class Napominalka {
 		addButton.setFont(scaledFont.deriveFont(Font.BOLD, scaledFont.getSize()*1.2f));
 		addButton.setMargin(new Insets(20,0,0,0));
 		addButton.addActionListener((ae) -> {
-			
+			var newjp = new MyJPanel(Map.entry(LocalDate.of(1900, 12, 1), "описание"));
+			textFields.add(newjp.getDateTextField());
+			textFields.add(newjp.getNameTextField());
+			mainPanel.add(newjp);
+			frame.pack();
+			// mainPanel.repaint();
+			// mainPanel.revalidate();
+			// background.revalidate();
 		});
 		background.add(BorderLayout.SOUTH, addButton);
 		
@@ -91,7 +105,7 @@ public class Napominalka {
 		
 	}
 	
-	private ArrayList<JTextField> addTextfieldsToPanel(JPanel mainPanel) {
+	/* private ArrayList<JTextField> addTextfieldsToPanel(JPanel mainPanel) {
 		ArrayList<JTextField> textFieldsLoc = new ArrayList<>();
 		var tmpMap = new TreeMap<>(container.getDatesNames());
 		while (!tmpMap.isEmpty()) {
@@ -151,7 +165,7 @@ public class Napominalka {
 			
 		}
 		return textFieldsLoc;
-	}
+	} */
 	
 	private void saveChangesToContainer() {
 		int changes = 0;
@@ -268,26 +282,32 @@ public class Napominalka {
 	private class MyJPanel extends JPanel {
 		private JTextField dateTf;
 		private JTextField nameTf;
+		private JPopupMenu jPopupMenu;
 		
 		public MyJPanel(Map.Entry<LocalDate, String> entry) {
 			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")), 10);
 			dateTf.setMargin(new Insets(20,20,0,0));
 			dateTf.setEditable(false);
 			dateTf.addMouseListener(new EditMouseListener());
-			dateTf.addActionListener(ae -> {
-				JTextField c = (JTextField) ae.getSource();
+			dateTf.addActionListener(ae -> {	//change date or remove entry
 				var parser = new Parser();
-				if (parser.isValidDate(c.getText())) {
-					c.setEditable(false);
-					c.getCaret().setVisible(false);
+				JTextField c = (JTextField) ae.getSource();
+				if (!c.getText().equals("") && !parser.isValidDate(c.getText())) return;
+				if (c.getText().equals("")) {
+					container.remove(entry.getKey());
+				} else if (parser.isValidDate(c.getText())) {
 					saveChangesToContainer();
-					mainPanel.removeAll();
-					textFields = addTextfieldsToPanelNew(mainPanel);
-					mainPanel.revalidate();
 				}
+				c.setEditable(false);
+				c.getCaret().setVisible(false);
+				mainPanel.removeAll();
+				textFields = addTextfieldsToPanelNew(mainPanel);
+				frame.pack();
+				// mainPanel.revalidate();
+				
 			});
 			
-			this.nameTf = new JTextField(entry.getValue().toString(), 10);
+			this.nameTf = new JTextField(entry.getValue(), 10);
 			nameTf.setMargin(new Insets(20,20,0,0));
 			nameTf.setEditable(false);
 			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
@@ -309,6 +329,37 @@ public class Napominalka {
 			
 			this.add(dateTf);
 			this.add(nameTf);
+			
+			/* jPopupMenu = new JPopupMenu();
+			var jMenuItem = new JMenuItem("Удалить");
+			jPopupMenu.add(jMenuItem);
+			jMenuItem.addActionListener((ae) -> {
+				var jm = (JMenuItem) ae.getSource();
+				System.out.println("sssssss"+jm.getComponent());
+			});
+			this.setComponentPopupMenu(jPopupMenu); */
+			
+			/* this.setComponentPopupMenu(new JPopupMenu() {
+				var jMenuItem = new JMenuItem("Удалить");
+				public JPopupMenu() {
+					this.add(jMenuItem);
+					jMenuItem.addActionListener((ae) -> {
+						System.out.println(ae.getSource());
+					});
+				}
+			}); */
+			
+			/* this.addMouseListener(new MouseAdapter() {
+				public void mouseClicked(MouseEvent e) {
+					// if (e.getButton()==3) {
+						var comp = e.getComponent();
+						jPopupMenu.show(comp, e.getX(), e.getY());
+					// }
+				}
+			}); */
+			
+			
+			
 		}
 		
 		public JTextField getDateTextField() { return dateTf; }

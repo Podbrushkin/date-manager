@@ -138,7 +138,7 @@ public class Parser {
 				datesNames.put(ld, name);
 				
 			}
-			System.out.println("prsdatesNames.size():"+datesNames.size());
+			// System.out.println("prsdatesNames.size():"+datesNames.size());
 			return datesNames;
 		} catch (IOException ioe) {
 			throw new RuntimeException("Failed to read from tab-separated file: "+ioe);
