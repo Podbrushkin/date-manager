@@ -20,8 +20,9 @@ public class Parser {
 	private DateTimeFormatter dtfAsIs = DateTimeFormatter.ofPattern("d LLLL yyyy", Locale.forLanguageTag("ru"));
 	
 	public static void main(String[] args) throws IOException {
-		
-		String workDir = System.getProperty("user.dir");
+		System.out.println("args:"+Arrays.toString(args));
+		System.out.println("parseSmallToken():"+new Parser().parseSmallToken(args[0]));
+		/* String workDir = System.getProperty("user.dir");
 		Path workDirPath = Path.of(workDir);
 		
 		System.out.println("Working Directory = " + workDir);
@@ -36,7 +37,7 @@ public class Parser {
 		}
 		System.out.println("Parsed dates: \n" + dates);
 		
-		System.out.println("Parsed Dates&Values: "+ parser.parseTsv(Path.of(workDir+"\\tsv.txt"))); 
+		System.out.println("Parsed Dates&Values: "+ parser.parseTsv(Path.of(workDir+"\\tsv.txt")));  */
 	}
 	
 	public Set<LocalDate> parseFile(Path file) throws IOException {
@@ -80,9 +81,10 @@ public class Parser {
 		return dates;
 	}
 	
-	
-	
+	//	PLS FIX: it works inconsistently if parser is reused!
+	private int recursionHook = 0;
 	public LocalDate parseSmallToken(String token) {
+		// System.out.println("parsingTOP:"+token);
 		token = token.strip();
 		var tempDates = new TreeSet<LocalDate>();
 		if (token.length() <= 6) return null;
@@ -101,7 +103,10 @@ public class Parser {
 			} catch (java.time.format.DateTimeParseException e) {}
 		}
 		
+		// System.out.println("parsing:"+token);
+		
 		try {
+			var tokenA = token.replace("-", " ");
 			var ld = DateParserUtils.parseDateTime(token).toLocalDate();
 			if (ld != null) {
 				return ld;
@@ -111,7 +116,27 @@ public class Parser {
 		} catch (java.time.format.DateTimeParseException e) {}
 		if (tempDates.size() > 0)
 		System.out.printf("%s\t parsed from: %s\n",tempDates,token);
-		return null;
+		
+		if (recursionHook>3) {
+			recursionHook = 0;
+			System.out.println("parser: return null :(");
+			return null;
+		}
+		recursionHook++;
+		var st = new StringTokenizer(token,"- \t");
+		var sj = new StringJoiner(" ");
+		while (st.hasMoreTokens()) {
+			var tk = st.nextToken();
+			if (tk.length() > 2) {
+				try {
+					tk = String.format("%04d" , Integer.parseInt(tk));
+				} catch (Exception e) { }
+			}
+			sj.add(tk);
+		}
+		// System.out.println("sj:"+sj);
+		return parseSmallToken(sj.toString());
+		
 	}
 	
 	public boolean isValidDate(String date) {
@@ -131,6 +156,7 @@ public class Parser {
 				var st = new StringTokenizer(line, "\t");
 				String dateStr = st.nextToken();
 				LocalDate ld = parseSmallToken(dateStr);
+				System.out.println("ld:"+ld+","+dateStr);
 				String name = "";
 				try {
 					name = st.nextToken();

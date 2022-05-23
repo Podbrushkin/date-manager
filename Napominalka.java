@@ -178,6 +178,10 @@ public class Napominalka {
 			if (changed) changes++;
 			
 		}
+		// System.out.println("saveChanges:"+container.getDatesNames());
+		// System.out.println("saveChanges:"+textFields.forEach().);
+		textFields.forEach(tf -> System.out.print(tf.getText()+" "));
+		// System.out.printf("tfnumber and datesnames num:%s %s",textFields.size(), container.getDatesNames().size());
 		if (changes > 0) new Exporter().writeToFile(container.getDatesNames());
 		System.out.println("Number of changes: "+changes);
 	}
@@ -285,17 +289,40 @@ public class Napominalka {
 		private JPopupMenu jPopupMenu;
 		
 		public MyJPanel(Map.Entry<LocalDate, String> entry) {
-			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")), 10);
+			jPopupMenu = new JPopupMenu();
+			var jMenuItem = new JMenuItem("Удалить");
+			jPopupMenu.add(jMenuItem);
+			jMenuItem.addActionListener((ae) -> {
+				var jm = (JMenuItem) ae.getSource();
+				var jpm = (JPopupMenu) jm.getParent();
+				var myjtf = (JTextField) jpm.getInvoker();
+				var myjpanel = (MyJPanel) myjtf.getParent();
+				String selDateStr = myjpanel.getDateTextField().getText();
+				LocalDate selectedDate = new Parser().parseSmallToken(selDateStr);
+				container.remove(selectedDate);
+				new Exporter().writeToFile(container.getDatesNames());
+				// int dtfIndex = textFields.indexOf(myjpanel.getDateTextField());
+				// textFields.remove(dtfIndex); textFields.remove(dtfIndex+1);
+				// saveChangesToContainer();
+				mainPanel.removeAll();
+				textFields = addTextfieldsToPanelNew(mainPanel);
+				frame.pack();
+			});
+			
+			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("d MMMM y")), 10);
 			dateTf.setMargin(new Insets(20,20,0,0));
 			dateTf.setEditable(false);
+			// dateTf.setInheritsPopupMenu(true);
+			dateTf.add(jPopupMenu);
+			dateTf.setComponentPopupMenu(jPopupMenu);
 			dateTf.addMouseListener(new EditMouseListener());
 			dateTf.addActionListener(ae -> {	//change date or remove entry
-				var parser = new Parser();
+				
 				JTextField c = (JTextField) ae.getSource();
-				if (!c.getText().equals("") && !parser.isValidDate(c.getText())) return;
+				if (!c.getText().equals("") && !new Parser().isValidDate(c.getText())) return;
 				if (c.getText().equals("")) {
 					container.remove(entry.getKey());
-				} else if (parser.isValidDate(c.getText())) {
+				} else if (new Parser().isValidDate(c.getText())) {
 					saveChangesToContainer();
 				}
 				c.setEditable(false);
@@ -310,6 +337,9 @@ public class Napominalka {
 			this.nameTf = new JTextField(entry.getValue(), 10);
 			nameTf.setMargin(new Insets(20,20,0,0));
 			nameTf.setEditable(false);
+			// nameTf.setInheritsPopupMenu(true);
+			nameTf.add(jPopupMenu);
+			nameTf.setComponentPopupMenu(jPopupMenu);
 			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
 				nameTf.setBackground(new Color(50,255,50));
 				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue().toString());
@@ -323,6 +353,7 @@ public class Napominalka {
 				JTextField c = (JTextField) ae.getSource();
 				c.setEditable(false);
 				c.getCaret().setVisible(false);
+				// System.out.println("submitName:"+container.getDatesNames());
 				saveChangesToContainer();
 			});
 			nameTf.addMouseListener(new EditMouseListener());
@@ -330,14 +361,8 @@ public class Napominalka {
 			this.add(dateTf);
 			this.add(nameTf);
 			
-			/* jPopupMenu = new JPopupMenu();
-			var jMenuItem = new JMenuItem("Удалить");
-			jPopupMenu.add(jMenuItem);
-			jMenuItem.addActionListener((ae) -> {
-				var jm = (JMenuItem) ae.getSource();
-				System.out.println("sssssss"+jm.getComponent());
-			});
-			this.setComponentPopupMenu(jPopupMenu); */
+			
+			// this.setComponentPopupMenu(jPopupMenu);
 			
 			/* this.setComponentPopupMenu(new JPopupMenu() {
 				var jMenuItem = new JMenuItem("Удалить");

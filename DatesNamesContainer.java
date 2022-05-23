@@ -31,8 +31,11 @@ public class DatesNamesContainer {
 		return false;
 	}
 	public boolean overwriteIfExists(String date, String name) {
+		System.out.println("dns in:"+datesNames);
 		if (!parser.isValidDate(date)) return false;
+		// System.out.printf("datesNamesCont:%s %s\n",date,name);
 		var locDate = parser.parseSmallToken(date);
+		// System.out.printf("datesNamesCont2!!!:%s %s\n",date,locDate);
 		if (Collections.frequency(datesNames.values(), name) > 1) return false;
 		if (!datesNames.containsKey(locDate) && !datesNames.containsValue(name)) {
 			datesNames.put(locDate, name);
