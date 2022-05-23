@@ -114,6 +114,12 @@ public class Parser {
 		return null;
 	}
 	
+	public boolean isValidDate(String date) {
+		var locDate = parseSmallToken(date);
+		if (locDate == null || locDate.getYear() == 0) return false;
+		else return true;
+	}
+	
 	public Map<LocalDate, String> parseTsv(Path file) {
 		try {
 			Map<LocalDate, String> datesNames = new TreeMap<>();

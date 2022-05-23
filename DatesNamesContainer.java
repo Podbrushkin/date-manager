@@ -29,12 +29,32 @@ public class DatesNamesContainer {
 		}
 		return false;
 	}
-	public boolean overwrite(String date, String name) {
+	public boolean overwriteIfExists(String date, String name) {
+		if (!parser.isValidDate(date)) return false;
 		var locDate = parser.parseSmallToken(date);
-		if (!datesNames.containsKey(locDate)) return false;
-		
+		if (!datesNames.containsKey(locDate) && !datesNames.containsValue(name)) return false;
+		if (Collections.frequency(datesNames.values(), name) > 1) return false;
+		if (!datesNames.containsKey(locDate)) {
+			LocalDate existingDate = getDateByName(name);
+			if (!locDate.equals(existingDate)) {
+				System.out.println("gonna to remove");
+				datesNames.remove(existingDate, name);
+			}
+		} else if (datesNames.get(locDate).equals(name)) {
+			return false;
+		}
 		datesNames.put(locDate, name);
+		System.out.printf("changed:%s %s\n", locDate, name);
 		return true;
+	}
+	
+	public LocalDate getDateByName(String name) {
+		LocalDate date = datesNames.entrySet().stream().filter((e) -> e.getValue().equals(name)).toList().get(0).getKey();
+		return date;
+	}
+	
+	public boolean overwriteDate(String oldDate, String newDate) {
+		return false;
 	}
 	
 	public Map.Entry<LocalDate, String> getClosestDateInFuture() {

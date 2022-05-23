@@ -23,7 +23,7 @@ public class Napominalka {
 	private ArrayList<JTextField> textFields = new ArrayList<>();
 	// private final Font scaledFont = defFont.deriveFont(newFontSize);
 	private final Font scaledFont = new Font("Calibri", Font.PLAIN, (int)newFontSize);
-	
+	private JPanel mainPanel;
 	public static void main(String[] args) {
 		new Napominalka().buildGui();
 		
@@ -58,20 +58,62 @@ public class Napominalka {
 		GridLayout grid = new GridLayout(container.getDatesNames().size(), 2);
 		grid.setVgap(10);
 		grid.setHgap(20);
-		var mainPanel = new JPanel(grid);
+		mainPanel = new JPanel(grid);
+		mainPanel.setBorder(BorderFactory.createEmptyBorder(0,0,20,0));
 		background.add(BorderLayout.CENTER, mainPanel);
 		frame.getContentPane().add(background);
 		
+		textFields = addTextfieldsToPanel(mainPanel);
+		var addButton = new JButton("+");
+		addButton.setFont(scaledFont.deriveFont(Font.BOLD, scaledFont.getSize()*1.2f));
+		addButton.setMargin(new Insets(20,0,0,0));
+		// background.add(BorderLayout.SOUTH, addButton);
+		
+		frame.pack();
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+	}
+	
+	private ArrayList<JTextField> addTextfieldsToPanelNew(JPanel mainPanel) {
+		
+		return null;
+		
+	}
+	
+	private ArrayList<JTextField> addTextfieldsToPanel(JPanel mainPanel) {
+		ArrayList<JTextField> textFieldsLoc = new ArrayList<>();
 		var tmpMap = new TreeMap<>(container.getDatesNames());
 		while (!tmpMap.isEmpty()) {
 			var entry = tmpMap.pollFirstEntry();
 			var textField = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
 			textField.setMargin(new Insets(20,20,0,0));
 			textField.setEditable(false);
+			textField.addMouseListener(new EditMouseListener());
+			textField.addActionListener(ae -> {
+				JTextField c = (JTextField) ae.getSource();
+				var parser = new Parser();
+				if (parser.isValidDate(c.getText())) {
+					c.setEditable(false);
+					c.getCaret().setVisible(false);
+					saveChangesToContainer();
+					mainPanel.removeAll();
+					textFields = addTextfieldsToPanel(mainPanel);
+					mainPanel.revalidate();
+					// container.overwriteDate(c.getText());
+				}
+			});
+			textField.setInputVerifier(new InputVerifier() {
+				String lastGood = "";
+				public boolean verify(JComponent input) {
+					JTextField tf = (JTextField)input;
+					if (new Parser().isValidDate(tf.getText())) return true;
+					else return false;
+				}
+			});
 			
 			// System.out.println("getMargin:"+textField.getMargin());
 			mainPanel.add(textField);
-			textFields.add(textField);
+			textFieldsLoc.add(textField);
 			
 			textField = new JTextField(entry.getValue().toString());
 			textField.setMargin(new Insets(20,20,0,0));
@@ -89,59 +131,39 @@ public class Napominalka {
 				JTextField c = (JTextField) ae.getSource();
 				c.setEditable(false);
 				c.getCaret().setVisible(false);
-				revalidate();
+				saveChangesToContainer();
 			});
-			textField.addMouseListener(new MouseListener() {
-				public void mouseClicked(MouseEvent e) {
-					if (e.getButton()==1 && e.getClickCount()>1) {
-						JTextField c = (JTextField) e.getComponent();
-						if (!c.isEditable()) {
-							c.setEditable(true);
-							c.getCaret().setVisible(true);
-							// c.setBackground(null);
-						}
-					}
-				}
-				public void mouseEntered(MouseEvent e) {}
-				public void mouseExited(MouseEvent e) {}
-				public void mousePressed(MouseEvent e) {}
-				public void mouseReleased(MouseEvent e) {}
-			});
+			textField.addMouseListener(new EditMouseListener());
 			
 			mainPanel.add(textField);
-			textFields.add(textField);
+			textFieldsLoc.add(textField);
 			
 		}
-		
-		frame.pack();
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
+		return textFieldsLoc;
 	}
 	
-	private void revalidate() {
+	private void saveChangesToContainer() {
 		int changes = 0;
 		for (int i = 0; i < textFields.size()-1; i=i+2) {
 			
 			String dateStr = textFields.get(i).getText();
 			String nameStr = textFields.get(i+1).getText();
 			
-			if (!container.contains(dateStr, nameStr)) {
-				boolean changed = container.overwrite(dateStr, nameStr);
-				if (changed) changes++;
-			}
+			boolean changed = container.overwriteIfExists(dateStr, nameStr);
+			if (changed) changes++;
+			
 		}
 		if (changes > 0) new Exporter().writeToFile(container.getDatesNames());
 		System.out.println("Number of changes: "+changes);
 	}
+	
 	
 	private void addTrayIcon() {
 		
 		TrayIcon trayIcon = null;
 		if (SystemTray.isSupported()) {
 			
-			
 			SystemTray tray = SystemTray.getSystemTray();
-			
 			
 			PopupMenu popup = new PopupMenu("Название попуп меню");
 			popup.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.6f));
@@ -151,6 +173,8 @@ public class Napominalka {
 			mainItem.addActionListener((ae) -> {
 				frame.setVisible(true);
 				frame.setExtendedState(JFrame.NORMAL);
+				frame.setAlwaysOnTop(true);
+				frame.setAlwaysOnTop(false);
 			});
 			popup.add(mainItem);
 			
@@ -174,8 +198,8 @@ public class Napominalka {
 						else {
 							frame.setVisible(true);
 							frame.setExtendedState(JFrame.NORMAL);
-							// frame.setAlwaysOnTop(true);
-							// frame.setAlwaysOnTop(false);
+							frame.setAlwaysOnTop(true);
+							frame.setAlwaysOnTop(false);
 						}
 					}
 				}
@@ -212,5 +236,23 @@ public class Napominalka {
 			System.out.println(name);
 		}
 	}
+
+	private class EditMouseListener implements MouseListener {
+		public void mouseClicked(MouseEvent e) {
+			if (e.getButton()==1 && e.getClickCount()>1) {
+				JTextField c = (JTextField) e.getComponent();
+				if (!c.isEditable()) {
+					if (textFields.stream().filter(tf -> tf.isEditable()).count() > 0) return;
+					c.setEditable(true);
+					c.getCaret().setVisible(true);
+				}
+			}
+		}
+		public void mouseEntered(MouseEvent e) {}
+		public void mouseExited(MouseEvent e) {}
+		public void mousePressed(MouseEvent e) {}
+		public void mouseReleased(MouseEvent e) {}
+	}
+
 
 }
