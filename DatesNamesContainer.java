@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.nio.file.Path;
 
 public class DatesNamesContainer {
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private Parser parser = new Parser();
 	private TreeMap<LocalDate, String> datesNames = new TreeMap<>();
 	
@@ -31,7 +32,7 @@ public class DatesNamesContainer {
 		return false;
 	}
 	public boolean overwriteIfExists(String date, String name) {
-		System.out.println("dns in:"+datesNames);
+		log.debug("dns in:"+datesNames);
 		if (!parser.isValidDate(date)) return false;
 		// System.out.printf("datesNamesCont:%s %s\n",date,name);
 		var locDate = parser.parseSmallToken(date);
@@ -44,14 +45,14 @@ public class DatesNamesContainer {
 		if (!datesNames.containsKey(locDate)) {
 			LocalDate existingDate = getDateByName(name);
 			if (!locDate.equals(existingDate)) {
-				System.out.println("gonna to remove");
+				log.trace("gonna to remove");
 				datesNames.remove(existingDate, name);
 			}
 		} else if (datesNames.get(locDate).equals(name)) {
 			return false;
 		}
 		datesNames.put(locDate, name);
-		System.out.printf("changed:%s %s\n", locDate, name);
+		log.trace("changed:%s %s\n", locDate, name);
 		return true;
 	}
 	

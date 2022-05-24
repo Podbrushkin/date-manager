@@ -1,5 +1,6 @@
 package napominalka;
 
+// import org.slf4j.*;
 import org.mozilla.universalchardet.UniversalDetector;
 import com.github.sisyphsu.dateparser.DateParserUtils;
 import java.time.LocalDate;
@@ -16,12 +17,30 @@ import java.io.IOException;
 
 
 public class Parser {
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("ru"));
 	private DateTimeFormatter dtfAsIs = DateTimeFormatter.ofPattern("d LLLL yyyy", Locale.forLanguageTag("ru"));
 	
 	public static void main(String[] args) throws IOException {
 		System.out.println("args:"+Arrays.toString(args));
-		System.out.println("parseSmallToken():"+new Parser().parseSmallToken(args[0]));
+		if (args.length > 0)
+			System.out.println("parseSmallToken():"+new Parser().parseSmallToken(args[0]));
+		String[] testDataRu = {"1 января 2001","2 февраль 2002","3 Марта 903","4 апреля 0904"," 05 Май 905",
+							"06 июня 0906", "07 июль 0403", "08 августа 20"};
+		String[] testDataEng = {"1 jan 1991","2 february 1992", "03 march 1993", "4 April 1994"," 5 may 0995", "06 June 996",
+							"7 july 23"};
+		String[] testDataDig = {"1 1 1801", "2-2-1802","3-03-1803","04-04-1804", "05.5.1805",
+							"1806.6.6", "1807-07-07", "1808 08 08", "1809.09.09", "10 10 100", "11.11.111"};
+		for (int i = 0; i < testDataRu.length; i++) {
+			System.out.printf("%s=\t%s\n",testDataRu[i],new Parser().parseSmallToken(testDataRu[i])); 
+		}
+		for (int i = 0; i < testDataEng.length; i++) {
+			System.out.printf("%s=\t%s\n",testDataEng[i],new Parser().parseSmallToken(testDataEng[i])); 
+		}
+		for (int i = 0; i < testDataDig.length; i++) {
+			System.out.printf("%s=\t%s\n",testDataDig[i],new Parser().parseSmallToken(testDataDig[i])); 
+		}
+	
 		/* String workDir = System.getProperty("user.dir");
 		Path workDirPath = Path.of(workDir);
 		
@@ -82,10 +101,33 @@ public class Parser {
 	}
 	
 	//	PLS FIX: it works inconsistently if parser is reused!
-	private int recursionHook = 0;
 	public LocalDate parseSmallToken(String token) {
-		// System.out.println("parsingTOP:"+token);
-		token = token.strip();
+		log.trace("parsingTOP:"+token);
+		var st = new StringTokenizer(token,"- .");
+		var sj = new StringJoiner(" ");
+		int tokenCount = 0;
+		boolean firstWasYear = false;
+		while (st.hasMoreTokens()) {
+			var tk = st.nextToken();
+			tokenCount++;
+			if (tokenCount==1 && tk.length()==4) firstWasYear = true;
+			if (tk.length() > 2) {
+				try {
+					tk = String.format("%04d" , Integer.parseInt(tk));
+				} catch (Exception e) {}
+			}
+			if (tokenCount == 3 && !firstWasYear) {
+				try {
+					tk = String.format("%04d" , Integer.parseInt(tk));
+				} catch (Exception e) { }
+			}
+			
+			sj.add(tk);
+		}
+		log.trace("sj:"+sj);
+		token = sj.toString();
+		
+		// token = token.strip();
 		var tempDates = new TreeSet<LocalDate>();
 		if (token.length() <= 6) return null;
 		//1st and 2nd tries allow parsing from russian
@@ -103,7 +145,7 @@ public class Parser {
 			} catch (java.time.format.DateTimeParseException e) {}
 		}
 		
-		// System.out.println("parsing:"+token);
+		log.trace("parsingMID:"+token);
 		
 		try {
 			var tokenA = token.replace("-", " ");
@@ -115,28 +157,13 @@ public class Parser {
 			}
 		} catch (java.time.format.DateTimeParseException e) {}
 		if (tempDates.size() > 0)
-		System.out.printf("%s\t parsed from: %s\n",tempDates,token);
+		log.trace("%s\t parsed from: %s\n",tempDates,token);
 		
-		if (recursionHook>3) {
-			recursionHook = 0;
-			System.out.println("parser: return null :(");
-			return null;
-		}
-		recursionHook++;
-		var st = new StringTokenizer(token,"- \t");
-		var sj = new StringJoiner(" ");
-		while (st.hasMoreTokens()) {
-			var tk = st.nextToken();
-			if (tk.length() > 2) {
-				try {
-					tk = String.format("%04d" , Integer.parseInt(tk));
-				} catch (Exception e) { }
-			}
-			sj.add(tk);
-		}
-		// System.out.println("sj:"+sj);
-		return parseSmallToken(sj.toString());
 		
+		
+		
+		
+		return null;
 	}
 	
 	public boolean isValidDate(String date) {
@@ -156,7 +183,7 @@ public class Parser {
 				var st = new StringTokenizer(line, "\t");
 				String dateStr = st.nextToken();
 				LocalDate ld = parseSmallToken(dateStr);
-				System.out.println("ld:"+ld+","+dateStr);
+				log.trace("ld:"+ld+","+dateStr);
 				String name = "";
 				try {
 					name = st.nextToken();

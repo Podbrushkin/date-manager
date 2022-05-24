@@ -180,7 +180,7 @@ public class Napominalka {
 		}
 		// System.out.println("saveChanges:"+container.getDatesNames());
 		// System.out.println("saveChanges:"+textFields.forEach().);
-		textFields.forEach(tf -> System.out.print(tf.getText()+" "));
+		// textFields.forEach(tf -> System.out.print(tf.getText()+" "));
 		// System.out.printf("tfnumber and datesnames num:%s %s",textFields.size(), container.getDatesNames().size());
 		if (changes > 0) new Exporter().writeToFile(container.getDatesNames());
 		System.out.println("Number of changes: "+changes);
