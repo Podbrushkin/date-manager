@@ -16,7 +16,12 @@ public class DatesNamesContainer {
 	}
 	
 	private void fillDatesNames() {
-		datesNames.putAll(parser.parseTsv(Path.of(".\\tsv.txt")));
+		try {
+			datesNames.putAll(parser.parseTsv(Path.of(".\\tsv.txt")));
+		} catch (Exception e) {
+			System.out.println("Failed to parse from tsv");
+			datesNames.put(LocalDate.now(), "сегодня");
+		}
 	}
 	
 	public SortedMap<LocalDate, String> getDatesNames() {

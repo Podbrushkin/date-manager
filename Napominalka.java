@@ -26,6 +26,7 @@ public class Napominalka {
 	private final Font scaledFont = new Font("Calibri", Font.PLAIN, (int)newFontSize);
 	private JPanel mainPanel;
 	public static void main(String[] args) {
+		System.setProperty("sun.java2d.uiScale", "1");
 		new Napominalka().buildGui();
 		
 	}
@@ -33,9 +34,9 @@ public class Napominalka {
 	private void buildGui() {
 		setUIFont(new FontUIResource(scaledFont));
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
-		new Exporter().writeToFile(container.getDatesNames());
-		// System.out.println("textFields.size():"+textFields.size());
-	}));
+			new Exporter().writeToFile(container.getDatesNames());
+			// System.out.println("textFields.size():"+textFields.size());
+		}));
 		addTrayIcon();
 		frame = new JFrame("Напоминалка");
 		frame.addWindowStateListener(new WindowStateListener() {
