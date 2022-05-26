@@ -17,7 +17,7 @@ public class Napominalka {
 	// private TreeMap<LocalDate, String> datesNames = DatesNamesContainer.getDatesNames();
 	private final Font defFont = Font.decode(null);
 	private float scaleRatio = Toolkit.getDefaultToolkit().getScreenResolution()/96;
-	private float scaleAdditional = 2.5f;
+	private float scaleAdditional = 2.1f;
 	private float newFontSize = defFont.getSize() * scaleRatio * scaleAdditional;
 	private JFrame frame;
 	private Image image = Toolkit.getDefaultToolkit().getImage("icon.png");
@@ -52,7 +52,7 @@ public class Napominalka {
 		   }
 		});
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setResizable(false);
+		// frame.setResizable(false);
 		frame.setIconImage(image);
 		
 		
@@ -60,6 +60,8 @@ public class Napominalka {
 		// mainWindow.setLayout(new GridLayout(datesNames.size(),2));
 		BorderLayout layout = new BorderLayout();
 		JPanel background = new JPanel(layout);
+		// JPanel background = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		// JPanel background = new JPanel(new GridLayout(0, 1));
 		background.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
 		
 		// GridLayout grid = new GridLayout(container.getDatesNames().size(), 2);
@@ -67,9 +69,23 @@ public class Napominalka {
 		grid.setVgap(10);
 		grid.setHgap(20);
 		mainPanel = new JPanel(grid);
+		// mainPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		// mainPanel = new JPanel();
+		// mainPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+		// mainPanel = new JPanel(new GridBagLayout());
+		// mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(0,0,20,0));
-		background.add(BorderLayout.CENTER, mainPanel);
+		JScrollPane jsp = new JScrollPane(mainPanel);
+		// JScrollPane jsp = new JScrollPane(background);
+		// jsp.setCorner(ScrollPaneConstants.UPPER_LEFT_CORNER, mainPanel);
+		// jsp.setAlignmentX(Component.LEFT_ALIGNMENT);
+		jsp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		var jscrollbar = jsp.getVerticalScrollBar();
+		jscrollbar.setPreferredSize(new Dimension(50, 0));
+		jscrollbar.setUnitIncrement(jscrollbar.getUnitIncrement()*(int)scaleAdditional*20);
+		background.add(BorderLayout.WEST, jsp);
+		// frame.add(jsp);
+		// background.add(jsp);
 		frame.getContentPane().add(background);
 		
 		textFields = addTextfieldsToPanelNew(mainPanel);
@@ -86,7 +102,8 @@ public class Napominalka {
 			// mainPanel.revalidate();
 			// background.revalidate();
 		});
-		background.add(BorderLayout.SOUTH, addButton);
+		// background.add(BorderLayout.SOUTH, addButton);
+		mainPanel.add(addButton);
 		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
@@ -98,6 +115,7 @@ public class Napominalka {
 		var tfields = new ArrayList<JTextField>();
 		while (!tmpMap.isEmpty()) {
 			var myjp = new MyJPanel(tmpMap.pollFirstEntry());
+			myjp.setAlignmentX(Component.LEFT_ALIGNMENT);
 			tfields.add(myjp.getDateTextField());
 			tfields.add(myjp.getNameTextField());
 			mainPanel.add(myjp);
@@ -290,6 +308,7 @@ public class Napominalka {
 		private JPopupMenu jPopupMenu;
 		
 		public MyJPanel(Map.Entry<LocalDate, String> entry) {
+			this.setAlignmentX(Component.LEFT_ALIGNMENT);
 			jPopupMenu = new JPopupMenu();
 			var jMenuItem = new JMenuItem("Удалить");
 			jPopupMenu.add(jMenuItem);
@@ -311,6 +330,7 @@ public class Napominalka {
 			});
 			
 			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("d MMMM y")), 10);
+			// dateTf.setAlignmentX(Component.LEFT_ALIGNMENT);
 			dateTf.setMargin(new Insets(20,20,0,0));
 			dateTf.setEditable(false);
 			// dateTf.setInheritsPopupMenu(true);
@@ -335,7 +355,8 @@ public class Napominalka {
 				
 			});
 			
-			this.nameTf = new JTextField(entry.getValue(), 10);
+			this.nameTf = new JTextField(entry.getValue(),20);
+			// nameTf.setAlignmentX(Component.LEFT_ALIGNMENT);
 			nameTf.setMargin(new Insets(20,20,0,0));
 			nameTf.setEditable(false);
 			// nameTf.setInheritsPopupMenu(true);
