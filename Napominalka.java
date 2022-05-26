@@ -15,9 +15,10 @@ import java.time.format.DateTimeFormatter;
 public class Napominalka {
 	private DatesNamesContainer container = new DatesNamesContainer();
 	// private TreeMap<LocalDate, String> datesNames = DatesNamesContainer.getDatesNames();
+	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private final Font defFont = Font.decode(null);
 	private float scaleRatio = Toolkit.getDefaultToolkit().getScreenResolution()/96;
-	private float scaleAdditional = 2.1f;
+	private float scaleAdditional = 2.5f;
 	private float newFontSize = defFont.getSize() * scaleRatio * scaleAdditional;
 	private JFrame frame;
 	private Image image = Toolkit.getDefaultToolkit().getImage("icon.png");
@@ -25,6 +26,9 @@ public class Napominalka {
 	// private final Font scaledFont = defFont.deriveFont(newFontSize);
 	private final Font scaledFont = new Font("Calibri", Font.PLAIN, (int)newFontSize);
 	private JPanel mainPanel;
+	private int descriptionMaxLength = 10;
+	private int descriptionAvgLength = 10;
+	
 	public static void main(String[] args) {
 		System.setProperty("sun.java2d.uiScale", "1");
 		new Napominalka().buildGui();
@@ -52,16 +56,18 @@ public class Napominalka {
 		   }
 		});
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		// frame.getPreferredSize().getWidth();
+		
 		// frame.setResizable(false);
 		frame.setIconImage(image);
 		
 		
 		
 		// mainWindow.setLayout(new GridLayout(datesNames.size(),2));
-		BorderLayout layout = new BorderLayout();
-		JPanel background = new JPanel(layout);
-		// JPanel background = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		// JPanel background = new JPanel(new GridLayout(0, 1));
+		// BorderLayout layout = new BorderLayout();
+		// JPanel background = new JPanel(layout);
+		JPanel background = new JPanel(new GridLayout(0,1));
+		// JPanel background = new JPanel(new FlowLayout());
 		background.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
 		
 		// GridLayout grid = new GridLayout(container.getDatesNames().size(), 2);
@@ -69,27 +75,20 @@ public class Napominalka {
 		grid.setVgap(10);
 		grid.setHgap(20);
 		mainPanel = new JPanel(grid);
-		// mainPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		// mainPanel = new JPanel();
-		// mainPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
-		// mainPanel = new JPanel(new GridBagLayout());
-		// mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(0,0,20,0));
-		JScrollPane jsp = new JScrollPane(mainPanel);
-		// JScrollPane jsp = new JScrollPane(background);
-		// jsp.setCorner(ScrollPaneConstants.UPPER_LEFT_CORNER, mainPanel);
-		// jsp.setAlignmentX(Component.LEFT_ALIGNMENT);
-		jsp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		var jscrollbar = jsp.getVerticalScrollBar();
-		jscrollbar.setPreferredSize(new Dimension(50, 0));
-		jscrollbar.setUnitIncrement(jscrollbar.getUnitIncrement()*(int)scaleAdditional*20);
-		background.add(BorderLayout.WEST, jsp);
-		// frame.add(jsp);
-		// background.add(jsp);
-		frame.getContentPane().add(background);
 		
 		textFields = addTextfieldsToPanelNew(mainPanel);
-		var addButton = new JButton("+");
+		double minTfLength = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getWidth()).min().getAsDouble();
+		double maxTfLength = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getWidth()).max().getAsDouble();
+		double maxTfHeight = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getHeight()).max().getAsDouble();
+		System.out.println("maxTfLength:"+maxTfLength);
+		int framePreferredWidth = (int)Math.max(minTfLength*2.2, minTfLength+maxTfLength*1.1);
+		int framePreferredHeight = (int)Math.min((screenSize.getHeight()*0.7), maxTfHeight*textFields.size()*0.8);
+		var fDimension = new Dimension(framePreferredWidth, framePreferredHeight);
+		frame.setPreferredSize(fDimension);
+		
+		/* var addButton = new JButton("+");
 		addButton.setFont(scaledFont.deriveFont(Font.BOLD, scaledFont.getSize()*1.2f));
 		addButton.setMargin(new Insets(20,0,0,0));
 		addButton.addActionListener((ae) -> {
@@ -101,25 +100,53 @@ public class Napominalka {
 			// mainPanel.repaint();
 			// mainPanel.revalidate();
 			// background.revalidate();
-		});
-		// background.add(BorderLayout.SOUTH, addButton);
-		mainPanel.add(addButton);
+		}); */
+		var jsp = new JScrollPane(mainPanel);
+		var jsbar = jsp.getVerticalScrollBar();
+		jsbar.setPreferredSize(new Dimension((int)(jsbar.getPreferredSize().getWidth()*scaleAdditional), 0));
+		jsbar.setUnitIncrement((int)newFontSize);
+		jsp.getHorizontalScrollBar().setUnitIncrement((int)newFontSize);
+		// jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		// background.add(addButton, BorderLayout.SOUTH);
 		
+		background.add(jsp, BorderLayout.WEST);
+		frame.getContentPane().add(background);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
+		
 		frame.setVisible(true);
 	}
+
 	
 	private ArrayList<JTextField> addTextfieldsToPanelNew(JPanel mainPanel) {
+		LocalDate closestDate = container.getClosestDateInFuture().getKey().withYear(0);
+		
+		descriptionAvgLength = (int) container.getDatesNames().values().stream().mapToInt(v -> v.length()).average().orElse(10);
+		descriptionMaxLength = container.getDatesNames().values().stream().mapToInt(v -> v.length()).max().orElse(10);
 		var tmpMap = new TreeMap<>(container.getDatesNames());
 		var tfields = new ArrayList<JTextField>();
 		while (!tmpMap.isEmpty()) {
-			var myjp = new MyJPanel(tmpMap.pollFirstEntry());
-			myjp.setAlignmentX(Component.LEFT_ALIGNMENT);
+			var entry = tmpMap.pollFirstEntry();
+			var myjp = new MyJPanel(entry);
+			// int descLength = myjp.getNameTextField().getText().length();
+			// if (descriptionMaxLength < descLength) descriptionMaxLength = descLength;
 			tfields.add(myjp.getDateTextField());
 			tfields.add(myjp.getNameTextField());
 			mainPanel.add(myjp);
+			
+			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
+				myjp.getNameTextField().setBackground(new Color(50,255,50));
+				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue());
+				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
+			} 
+			else if (entry.getKey().withYear(0).equals(closestDate)) {
+				myjp.getNameTextField().setBackground(new Color(200,200,200));
+				String message = String.format("Ближайшая дата: %s %s", entry.getKey(), entry.getValue());
+				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
+			}
 		}
+		// frame.setMaximumSize(frame.getPreferredSize());
+		// frame.setMaximumSize(new Dimension(20,20));
 		return tfields;
 		
 	}
@@ -236,8 +263,8 @@ public class Napominalka {
 			trayIcon = new TrayIcon(image, "Напоминалка", popup);
 			trayIcon.setImageAutoSize(true);
 			
-			var entry = container.getClosestDateInFuture();
-			trayIcon.setToolTip(String.format("Ближайшая дата: %s %s", entry.getKey(), entry.getValue()));
+			// var entry = container.getClosestDateInFuture();
+			// trayIcon.setToolTip(String.format("Ближайшая дата: %s %s", entry.getKey(), entry.getValue()));
 			
 			trayIcon.addMouseListener(new MouseListener() {
 				public void mouseClicked(MouseEvent e) {
@@ -308,11 +335,32 @@ public class Napominalka {
 		private JPopupMenu jPopupMenu;
 		
 		public MyJPanel(Map.Entry<LocalDate, String> entry) {
-			this.setAlignmentX(Component.LEFT_ALIGNMENT);
 			jPopupMenu = new JPopupMenu();
-			var jMenuItem = new JMenuItem("Удалить");
-			jPopupMenu.add(jMenuItem);
-			jMenuItem.addActionListener((ae) -> {
+			var jMenuItemAdd = new JMenuItem("Создать");
+			jMenuItemAdd.addActionListener((ae) -> {
+				var newjp = new MyJPanel(Map.entry(LocalDate.now(), "Сегодня!"));
+				// newjp.getNameTextField().setBackground(new Color(250,250,250));
+				newjp.getNameTextField().setEditable(true);
+				newjp.getNameTextField().requestFocusInWindow();
+				textFields.add(newjp.getDateTextField());
+				textFields.add(newjp.getNameTextField());
+				mainPanel.add(newjp);
+				mainPanel.revalidate();
+				// var d = frame.getSize();
+				// frame.pack();
+				// frame.setSize(d);
+				// newjp.requestFocusInWindow();
+				var jsp = (JScrollPane) mainPanel.getParent().getParent();
+				// jsp.revalidate();
+				var jvsb =  jsp.getVerticalScrollBar();
+				// jvsb.revalidate();
+				// jvsb.setValue(jvsb.getMaximum()+jvsb.getUnitIncrement()*2);
+				SwingUtilities.invokeLater(() -> {jvsb.setValue(jvsb.getMaximum());});
+			});
+			jPopupMenu.add(jMenuItemAdd);
+			var jMenuItemDel = new JMenuItem("Удалить");
+			jPopupMenu.add(jMenuItemDel);
+			jMenuItemDel.addActionListener((ae) -> {
 				var jm = (JMenuItem) ae.getSource();
 				var jpm = (JPopupMenu) jm.getParent();
 				var myjtf = (JTextField) jpm.getInvoker();
@@ -326,12 +374,15 @@ public class Napominalka {
 				// saveChangesToContainer();
 				mainPanel.removeAll();
 				textFields = addTextfieldsToPanelNew(mainPanel);
-				frame.pack();
+				mainPanel.revalidate();
+				frame.revalidate();
+				// frame.pack();
 			});
 			
+			
 			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("d MMMM y")), 10);
-			// dateTf.setAlignmentX(Component.LEFT_ALIGNMENT);
 			dateTf.setMargin(new Insets(20,20,0,0));
+			// dateTf.setMargin(new Insets(20,0,0,0));
 			dateTf.setEditable(false);
 			// dateTf.setInheritsPopupMenu(true);
 			dateTf.add(jPopupMenu);
@@ -355,21 +406,15 @@ public class Napominalka {
 				
 			});
 			
-			this.nameTf = new JTextField(entry.getValue(),20);
-			// nameTf.setAlignmentX(Component.LEFT_ALIGNMENT);
+			this.nameTf = new JTextField(entry.getValue(), Math.max(10,(int)(descriptionMaxLength*0.63)));
 			nameTf.setMargin(new Insets(20,20,0,0));
+			// nameTf.setMargin(new Insets(20,0,0,0));
 			nameTf.setEditable(false);
 			// nameTf.setInheritsPopupMenu(true);
 			nameTf.add(jPopupMenu);
 			nameTf.setComponentPopupMenu(jPopupMenu);
-			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
-				nameTf.setBackground(new Color(50,255,50));
-				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue().toString());
-				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
-			} 
-			else if (entry.getKey().withYear(0).equals(container.getClosestDateInFuture().getKey().withYear(0))) {
-				nameTf.setBackground(new Color(200,200,200));
-			}
+			
+			
 			
 			nameTf.addActionListener(ae -> {
 				JTextField c = (JTextField) ae.getSource();
