@@ -2,6 +2,7 @@ package napominalka;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.basic.BasicFileChooserUI;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.TreeMap;
@@ -9,6 +10,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -31,9 +34,23 @@ public class Napominalka {
 	
 	public static void main(String[] args) {
 		System.setProperty("sun.java2d.uiScale", "1");
+		try {
+			// UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {}
+		System.out.println("Locale:"+Locale.getDefault());
+		
+		
+		
+		// var prop = UIManager.getString("FileChooser.lookInLabelText", Locale.getDefault());
+		// System.out.println("prop:"+prop);
+		// Locale.setDefault(Locale.RUSSIAN); 
+		// System.out.println("Locale:"+Locale.getDefault());
+		
 		new Napominalka().buildGui();
 		
 	}
+	
 	
 	private void buildGui() {
 		setUIFont(new FontUIResource(scaledFont));
@@ -78,7 +95,7 @@ public class Napominalka {
 		// mainPanel = new JPanel();
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(0,0,20,0));
 		
-		textFields = addTextfieldsToPanelNew(mainPanel);
+		addTextfieldsToPanelNew(mainPanel);
 		double minTfLength = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getWidth()).min().getAsDouble();
 		double maxTfLength = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getWidth()).max().getAsDouble();
 		double maxTfHeight = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getHeight()).max().getAsDouble();
@@ -118,7 +135,7 @@ public class Napominalka {
 	}
 
 	
-	private ArrayList<JTextField> addTextfieldsToPanelNew(JPanel mainPanel) {
+	private void addTextfieldsToPanelNew(JPanel mainPanel) {
 		LocalDate closestDate = container.getClosestDateInFuture().getKey().withYear(0);
 		
 		descriptionAvgLength = (int) container.getDatesNames().values().stream().mapToInt(v -> v.length()).average().orElse(10);
@@ -147,7 +164,8 @@ public class Napominalka {
 		}
 		// frame.setMaximumSize(frame.getPreferredSize());
 		// frame.setMaximumSize(new Dimension(20,20));
-		return tfields;
+		textFields = tfields;
+		
 		
 	}
 	
@@ -240,8 +258,49 @@ public class Napominalka {
 			
 			SystemTray tray = SystemTray.getSystemTray();
 			
-			PopupMenu popup = new PopupMenu("Название попуп меню");
+			PopupMenu popup = new PopupMenu();
 			popup.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.6f));
+			
+			MenuItem importItem = new MenuItem("Импорт...");
+			importItem.addActionListener((ae) -> {
+				prepareFileChooser();
+				var fileChooser = new JFileChooser();
+				// System.out.println("ui:"+fileChooser.getUI().getClass());
+				var fcUI = (BasicFileChooserUI) fileChooser.getUI();
+				// fcUI.getAccessoryPanel().removeAll();
+				var d = new Dimension((int)(screenSize.getWidth()*0.4), (int)(screenSize.getHeight()*0.5));
+				fileChooser.setPreferredSize(d);
+				// System.out.println(System.getProperty("os.name"));
+				if (System.getProperty("os.name").contains("Windows"))
+					fileChooser.setCurrentDirectory(new java.io.File(System.getProperty("user.home") + "/Desktop"));
+				
+				fileChooser.setFileView(new javax.swing.filechooser.FileView() {
+					public Icon getIcon(java.io.File f) {
+						var imgIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(f);
+						int w = (int)(imgIcon.getIconWidth()*scaleRatio*1.4);
+						int h = (int)(imgIcon.getIconHeight()*scaleRatio*1.4);
+						var imgageIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(f);
+						// System.out.println(imgIcon.getIconWidth());
+						// System.out.println(imgIcon.getIconHeight());
+						// int size = UIManager.getInt("FileChooser.iconsSize");
+						return new ImageIcon(imgageIcon.getImage().getScaledInstance(w, h, Image.SCALE_DEFAULT));
+					}
+				});
+				
+				
+				// fileChooser.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.01f));
+				// System.out.println("fcLocale:"+fileChooser.getLocale());
+				// System.out.println("fcLocaleLang:"+fileChooser.getLocale().getDisplayLanguage());
+				int response = fileChooser.showOpenDialog(frame);
+				if (response == JFileChooser.APPROVE_OPTION) {
+					container.fillDatesNames(fileChooser.getSelectedFile().toPath());
+					addTextfieldsToPanelNew(mainPanel);
+					mainPanel.revalidate();
+				}
+				
+			});
+			popup.add(importItem);
+			
 			
 			MenuItem mainItem = new MenuItem("Развернуть");
 			
@@ -311,6 +370,67 @@ public class Napominalka {
 			System.out.println(name);
 		}
 	}
+	
+	private void prepareFileChooser() {
+		boolean beenHere = (boolean) UIManager.get("FileChooser.readOnly");
+		if (beenHere) return;
+		UIManager.put("FileChooser.readOnly", Boolean.TRUE); 
+		UIManager.put("FileChooser.noPlacesBar", Boolean.TRUE); 
+		UIManager.put("FileChooser.detailsViewActionLabelText", "Таблица");
+		UIManager.put("FileChooser.listViewActionLabelText", "Список");
+		UIManager.put("FileChooser.openDialogTitleText", "Открыть");
+		UIManager.put("FileChooser.lookInLabelText", "");
+		UIManager.put("FileChooser.fileNameLabelText", "Имя файла:");
+		UIManager.put("FileChooser.filesOfTypeLabelText", "Тип файла:");
+		UIManager.put("FileChooser.openButtonText", "Открыть");
+		UIManager.put("FileChooser.cancelButtonText", "Отмена");
+		UIManager.put("FileChooser.acceptAllFileFilterText", "Любые файлы");
+		UIManager.put("FileChooser.upFolderToolTipText", "Наверх");
+		UIManager.put("FileChooser.viewMenuButtonToolTipText", "Вид");
+		// var imageIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(new java.io.File("."));
+		// UIManager.put("FileChooser.iconsSize", Integer.valueOf((int)(imageIcon.getIconWidth()*scaleRatio*1.4)));
+		
+		// UIManager.put("FileChooser.listViewWindowsStyle", Boolean.TRUE); 
+		// UIManager.put("FileChooser.usesSingleFilePane", Boolean.FALSE);
+		// var lafDefaults = new TreeMap<String,Object>();
+		// UIDefaults defaults = UIManager.getLookAndFeelDefaults();
+		UIDefaults defaults = UIManager.getDefaults();
+		
+		for (var enumm = defaults.keys(); enumm.hasMoreElements(); ) {
+			Object key = enumm.nextElement();
+			Object value = defaults.get(key);
+			String keyStr = key.toString();
+			// lafDefaults.put(keyStr,value);
+			
+			if ((keyStr.startsWith("FileChooser.") || keyStr.startsWith("FileView.")) && keyStr.contains("Icon")) {
+				try {
+				var imgIcon = (ImageIcon) value;
+				int w = (int)(imgIcon.getIconWidth()*scaleRatio*1.4);
+				int h = (int)(imgIcon.getIconHeight()*scaleRatio*1.4);
+				
+				UIManager.put(key, new ImageIcon(imgIcon.getImage().getScaledInstance(w, h, Image.SCALE_DEFAULT)));
+				} catch (Exception e) {}
+			}
+			// System.out.printf("%s %s\n",key, value);
+		}
+		// lafDefaults.entrySet().forEach(e -> System.out.printf("%s = %s\n",e.getKey(),e.getValue()));
+	}
+	
+	/* private class MyFileView extends javax.swing.filechooser.FileView {
+		static ImageIcon imgIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(new java.io.File("."));
+		final int w = (int)(imgIcon.getIconWidth()*scaleRatio*1.4);
+		final int h = (int)(imgIcon.getIconHeight()*scaleRatio*1.4);
+		
+		public Icon getIcon(java.io.File f) {
+			
+			
+			var imgageIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(f);
+			// System.out.println(imgIcon.getIconWidth());
+			// System.out.println(imgIcon.getIconHeight());
+			// int size = UIManager.getInt("FileChooser.iconsSize");
+			return new ImageIcon(imgageIcon.getImage().getScaledInstance(w, h, Image.SCALE_DEFAULT));
+		}
+	} */
 
 	private class EditMouseListener implements MouseListener {
 		public void mouseClicked(MouseEvent e) {
@@ -373,7 +493,7 @@ public class Napominalka {
 				// textFields.remove(dtfIndex); textFields.remove(dtfIndex+1);
 				// saveChangesToContainer();
 				mainPanel.removeAll();
-				textFields = addTextfieldsToPanelNew(mainPanel);
+				addTextfieldsToPanelNew(mainPanel);
 				mainPanel.revalidate();
 				frame.revalidate();
 				// frame.pack();
@@ -400,7 +520,7 @@ public class Napominalka {
 				c.setEditable(false);
 				c.getCaret().setVisible(false);
 				mainPanel.removeAll();
-				textFields = addTextfieldsToPanelNew(mainPanel);
+				addTextfieldsToPanelNew(mainPanel);
 				frame.pack();
 				// mainPanel.revalidate();
 				

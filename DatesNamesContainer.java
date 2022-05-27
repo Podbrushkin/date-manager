@@ -24,6 +24,12 @@ public class DatesNamesContainer {
 		}
 	}
 	
+	void fillDatesNames(Path path) {
+		try {
+			datesNames.putAll(parser.getAllFromDirOrZip(path));
+		} catch (Exception e) {}
+	}
+	
 	public SortedMap<LocalDate, String> getDatesNames() {
 		// if (datesNames.size() == 0) fillDatesNames();
 		return Collections.unmodifiableSortedMap(datesNames);

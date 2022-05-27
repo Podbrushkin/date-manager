@@ -10,7 +10,11 @@ import java.io.File;
 public class Exporter {
 	
 	public void writeToFile(Map<LocalDate, String> datesNames) {
-		File file = new File("tsv.txt");
+		writeToFile(datesNames, "tsv.txt");
+		
+	}
+	public void writeToFile(Map<LocalDate, String> datesNames, String fileName) {
+		File file = new File(fileName.replaceAll("\\/",""));
 		try {
 			file.createNewFile();
 		} catch (IOException e) {System.err.println("Failed to create tsv file");}
@@ -27,7 +31,5 @@ public class Exporter {
 		} catch (IOException e) {
 			System.err.println("Failed to write to file.");
 		}
-		
 	}
-	
 }

@@ -2,11 +2,11 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="LogToConsole" target="SYSTEM_OUT">
-            <PatternLayout pattern="%highlight{%-5level %c{.}.%method()\t - %msg%n}{STYLE=Logback}" charset="866" disableAnsi="false"/>
+            <PatternLayout pattern="%highlight{%-5level %c{.}.%method()\t - %msg%n}{TRACE=white}" charset="866" disableAnsi="false"/>
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="napominalka" level="trace" additivity="false">
+        <Logger name="napominalka.Parser" level="debug" additivity="false">
             <!-- <AppenderRef ref="LogToConsole"/> -->
         </Logger>
         <Root level="error">
