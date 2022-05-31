@@ -10,20 +10,28 @@ import java.io.File;
 public class Exporter {
 	
 	public void writeToFile(Map<LocalDate, String> datesNames) {
-		writeToFile(datesNames, "tsv.txt");
+		writeToFile(datesNames, "tsv");
 		
 	}
-	public void writeToFile(Map<LocalDate, String> datesNames, String fileName) {
-		File file = new File(fileName.replaceAll("\\/",""));
+	
+	public void writeToFile(Map<LocalDate, String> datesNames, File directory, String fileName) {
+		if (!directory.isDirectory()) throw new IllegalArgumentException("can't write here: "+directory);
+		fileName = fileName.replaceAll("[\\\\/]","");
+		var file = new File(directory, fileName+".txt");
 		try {
 			file.createNewFile();
-		} catch (IOException e) {System.err.println("Failed to create tsv file");}
+		} catch (IOException e) {
+			System.err.println("Failed to create tsv file");
+			return;
+		}
 		
-		/* for (int i = 0; i < 20 && !file.canWrite(); i++) {
+		
+		
+		for (int i = 0; i < 20 && !file.canWrite(); i++) {
 			System.out.printf("file:%s file.canWrite():%s",file,file.canWrite());
-			file = new File("tsv"+i+".txt");
-		} */
-		
+			file = new File(directory, fileName+i+".txt");
+		}
+		if (!file.canWrite()) throw new IllegalArgumentException("can't write here: "+file);
 		try (var pw = new PrintWriter(file, "utf-8")) {
 			for (var entry : datesNames.entrySet()) {
 				pw.println(entry.getKey()+"\t"+entry.getValue());
@@ -31,5 +39,11 @@ public class Exporter {
 		} catch (IOException e) {
 			System.err.println("Failed to write to file.");
 		}
+		
+	}
+	
+	public void writeToFile(Map<LocalDate, String> datesNames, String fileName) {
+		writeToFile(datesNames, new File("."), fileName);
+		
 	}
 }

@@ -68,7 +68,14 @@ public class DatesNamesContainer {
 	}
 	
 	public void remove(LocalDate locDate) {
+		log.info("Request to remove: "+locDate);
 		datesNames.remove(locDate);
+	}
+	
+	public void clear() {
+		log.info("Request to remove all entries");
+		datesNames.clear();
+		datesNames.put(LocalDate.now(), "сегодня");
 	}
 	
 	public LocalDate getDateByName(String name) {
@@ -85,16 +92,13 @@ public class DatesNamesContainer {
 		// System.out.println(treeset);
 		// System.out.println("=================");
 		
-		var tmpMap = new TreeMap<LocalDate, String>(new Comparator<LocalDate>() {
-			public int compare(LocalDate ld1, LocalDate ld2) {
-				if (ld1.withYear(0).isBefore(ld2.withYear(0))) return -1;
-				if (ld1.withYear(0).equals(ld2.withYear(0))) return 0;
-				if (ld1.withYear(0).isAfter(ld2.withYear(0))) return 1;
-				return 0;
-			}
-		});
+		var tmpMap = new TreeMap<LocalDate, String>(new MyDateWoYearComparator());
 		tmpMap.putAll(datesNames);
 		// System.out.println(tmpMap);
+		// tmpMap.keySet().stream().sorted()
+			// .filter(e -> e.withYear(currentYear).isAfter(today)).forEach(System.out::println);
+		// return Map.entry(closestDate, datesNames.get(closestDate));
+		
 		for (var entry : tmpMap.entrySet()) {
 			
 			if (entry.getKey().withYear(currentYear).isAfter(today)){

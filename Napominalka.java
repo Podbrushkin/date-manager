@@ -101,7 +101,8 @@ public class Napominalka {
 		double maxTfHeight = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getHeight()).max().getAsDouble();
 		System.out.println("maxTfLength:"+maxTfLength);
 		int framePreferredWidth = (int)Math.max(minTfLength*2.2, minTfLength+maxTfLength*1.1);
-		int framePreferredHeight = (int)Math.min((screenSize.getHeight()*0.7), maxTfHeight*textFields.size()*0.8);
+		int frameMinimalHeight = (int)Math.max(maxTfHeight*textFields.size()*0.8, screenSize.getHeight()*0.15);
+		int framePreferredHeight = (int)Math.min((screenSize.getHeight()*0.7), frameMinimalHeight);
 		var fDimension = new Dimension(framePreferredWidth, framePreferredHeight);
 		frame.setPreferredSize(fDimension);
 		
@@ -136,11 +137,16 @@ public class Napominalka {
 
 	
 	private void addTextfieldsToPanelNew(JPanel mainPanel) {
+		mainPanel.removeAll();
+		var trayIcon = SystemTray.getSystemTray().getTrayIcons()[0];
+		trayIcon.setToolTip("");
+		
 		LocalDate closestDate = container.getClosestDateInFuture().getKey().withYear(0);
 		
 		descriptionAvgLength = (int) container.getDatesNames().values().stream().mapToInt(v -> v.length()).average().orElse(10);
 		descriptionMaxLength = container.getDatesNames().values().stream().mapToInt(v -> v.length()).max().orElse(10);
-		var tmpMap = new TreeMap<>(container.getDatesNames());
+		var tmpMap = new TreeMap<LocalDate,String>(new MyDateWoYearComparator());
+		tmpMap.putAll(container.getDatesNames());
 		var tfields = new ArrayList<JTextField>();
 		while (!tmpMap.isEmpty()) {
 			var entry = tmpMap.pollFirstEntry();
@@ -151,15 +157,20 @@ public class Napominalka {
 			tfields.add(myjp.getNameTextField());
 			mainPanel.add(myjp);
 			
+			
+			
+			if (entry.getKey().withYear(0).equals(closestDate)) {
+				myjp.getNameTextField().setBackground(new Color(200,200,200));
+				if (!trayIcon.getToolTip().contains("Сегодня!")) {
+					String message = String.format("Ближайшая дата: %s %s", entry.getKey(), entry.getValue());
+					trayIcon.setToolTip(message);
+				}
+			}
 			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
 				myjp.getNameTextField().setBackground(new Color(50,255,50));
 				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue());
-				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
-			} 
-			else if (entry.getKey().withYear(0).equals(closestDate)) {
-				myjp.getNameTextField().setBackground(new Color(200,200,200));
-				String message = String.format("Ближайшая дата: %s %s", entry.getKey(), entry.getValue());
-				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
+				if (trayIcon.getToolTip().contains("Сегодня!")) message = message + "+++";
+				trayIcon.setToolTip(message);
 			}
 		}
 		// frame.setMaximumSize(frame.getPreferredSize());
@@ -168,68 +179,6 @@ public class Napominalka {
 		
 		
 	}
-	
-	/* private ArrayList<JTextField> addTextfieldsToPanel(JPanel mainPanel) {
-		ArrayList<JTextField> textFieldsLoc = new ArrayList<>();
-		var tmpMap = new TreeMap<>(container.getDatesNames());
-		while (!tmpMap.isEmpty()) {
-			var entry = tmpMap.pollFirstEntry();
-			var textField = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
-			textField.setMargin(new Insets(20,20,0,0));
-			textField.setEditable(false);
-			textField.addMouseListener(new EditMouseListener());
-			textField.addActionListener(ae -> {
-				JTextField c = (JTextField) ae.getSource();
-				var parser = new Parser();
-				if (parser.isValidDate(c.getText())) {
-					c.setEditable(false);
-					c.getCaret().setVisible(false);
-					saveChangesToContainer();
-					mainPanel.removeAll();
-					textFields = addTextfieldsToPanel(mainPanel);
-					mainPanel.revalidate();
-					// container.overwriteDate(c.getText());
-				}
-			});
-			textField.setInputVerifier(new InputVerifier() {
-				String lastGood = "";
-				public boolean verify(JComponent input) {
-					JTextField tf = (JTextField)input;
-					if (new Parser().isValidDate(tf.getText())) return true;
-					else return false;
-				}
-			});
-			
-			// System.out.println("getMargin:"+textField.getMargin());
-			mainPanel.add(textField);
-			textFieldsLoc.add(textField);
-			
-			textField = new JTextField(entry.getValue().toString());
-			textField.setMargin(new Insets(20,20,0,0));
-			textField.setEditable(false);
-			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
-				textField.setBackground(new Color(50,255,50));
-				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue().toString());
-				SystemTray.getSystemTray().getTrayIcons()[0].setToolTip(message);
-			} 
-			else if (entry.getKey().withYear(0).equals(container.getClosestDateInFuture().getKey().withYear(0))) {
-				textField.setBackground(new Color(200,200,200));
-			}
-			
-			textField.addActionListener(ae -> {
-				JTextField c = (JTextField) ae.getSource();
-				c.setEditable(false);
-				c.getCaret().setVisible(false);
-				saveChangesToContainer();
-			});
-			textField.addMouseListener(new EditMouseListener());
-			
-			mainPanel.add(textField);
-			textFieldsLoc.add(textField);
-			
-		}
-		return textFieldsLoc;
-	} */
 	
 	private void saveChangesToContainer() {
 		int changes = 0;
@@ -301,6 +250,17 @@ public class Napominalka {
 			});
 			popup.add(importItem);
 			
+			if (System.getProperty("os.name").contains("Windows")) {
+				var desktopDir = new java.io.File(System.getProperty("user.home") + "/Desktop");
+				MenuItem exportItem = new MenuItem("Экспорт на раб.стол");
+			
+				exportItem.addActionListener((ae) -> {
+					new Exporter().writeToFile(container.getDatesNames(), desktopDir, "NapominalkaData");
+				});
+				popup.add(exportItem);
+				
+				
+			}
 			
 			MenuItem mainItem = new MenuItem("Развернуть");
 			
@@ -487,7 +447,30 @@ public class Napominalka {
 				var myjpanel = (MyJPanel) myjtf.getParent();
 				String selDateStr = myjpanel.getDateTextField().getText();
 				LocalDate selectedDate = new Parser().parseSmallToken(selDateStr);
+				System.err.printf("Request to remove: %s %s",myjpanel.getDateTextField().getText(), myjpanel.getNameTextField().getText());
 				container.remove(selectedDate);
+				new Exporter().writeToFile(container.getDatesNames());
+				// int dtfIndex = textFields.indexOf(myjpanel.getDateTextField());
+				// textFields.remove(dtfIndex); textFields.remove(dtfIndex+1);
+				// saveChangesToContainer();
+				
+				addTextfieldsToPanelNew(mainPanel);
+				mainPanel.revalidate();
+				frame.revalidate();
+				// frame.pack();
+			});
+			jPopupMenu.addSeparator();
+			var jMenuItemDelAll = new JMenuItem("Очистить");
+			jPopupMenu.add(jMenuItemDelAll);
+			jMenuItemDelAll.addActionListener((ae) -> {
+				var jm = (JMenuItem) ae.getSource();
+				var jpm = (JPopupMenu) jm.getParent();
+				var myjtf = (JTextField) jpm.getInvoker();
+				var myjpanel = (MyJPanel) myjtf.getParent();
+				String selDateStr = myjpanel.getDateTextField().getText();
+				LocalDate selectedDate = new Parser().parseSmallToken(selDateStr);
+				System.err.printf("Request to remove all\n");
+				container.clear();
 				new Exporter().writeToFile(container.getDatesNames());
 				// int dtfIndex = textFields.indexOf(myjpanel.getDateTextField());
 				// textFields.remove(dtfIndex); textFields.remove(dtfIndex+1);
@@ -519,7 +502,6 @@ public class Napominalka {
 				}
 				c.setEditable(false);
 				c.getCaret().setVisible(false);
-				mainPanel.removeAll();
 				addTextfieldsToPanelNew(mainPanel);
 				frame.pack();
 				// mainPanel.revalidate();

@@ -135,7 +135,7 @@ public class Parser {
 	}
 	
 	private Map<LocalDate, String> parseTextFile(Path pathToFile) {
-		log.warn("parsing file:"+pathToFile);
+		log.info("parsing file:"+pathToFile);
 		Map<LocalDate, String> datesNames = new HashMap<LocalDate, String>();
 		try {
 			var ch1 = UniversalDetector.detectCharset(pathToFile);
@@ -188,7 +188,7 @@ public class Parser {
 			var ld = parseSmallToken(st.nextToken("\t"));
 			if (ld != null) {
 				var desc = st.nextToken("\t");
-				log.debug("Fast-scanned:{} {}",ld,desc);
+				log.trace("Fast-scanned:{} {}",ld,desc);
 				return Map.entry(ld, desc);
 			}
 		} catch (Exception e) {}
