@@ -1,6 +1,7 @@
 rmdir /S /Q classes & javac -cp lib\*;C:\TestJava\libs4log\* *.java -d classes &&^
 xcopy /S /I classes\ lib\tmp &&^
 xcopy /I lib\ lib\tmp &&^
+xcopy icon.png lib\tmp &&^
 cd lib\tmp &&^
 jar --extract --file dateparser-1.0.10.jar &&^
 jar --extract --file juniversalchardet-2.4.0.jar &&^

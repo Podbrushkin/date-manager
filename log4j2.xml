@@ -7,7 +7,7 @@
     </Appenders>
     <Loggers>
         <Logger name="napominalka.Parser" level="debug" additivity="false">
-            <!-- <AppenderRef ref="LogToConsole"/> -->
+            <AppenderRef ref="LogToConsole"/>
         </Logger>
         <Root level="error">
             <AppenderRef ref="LogToConsole"/>

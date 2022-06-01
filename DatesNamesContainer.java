@@ -17,7 +17,7 @@ public class DatesNamesContainer {
 	
 	private void fillDatesNames() {
 		try {
-			datesNames.putAll(parser.parseTsv(Path.of(".\\tsv.txt")));
+			datesNames.putAll(parser.parseTsv(Path.of(Exporter.dirForData.getAbsolutePath()+java.io.File.separator+"data.tsv")));
 		} catch (Exception e) {
 			System.out.println("Failed to parse from tsv");
 			datesNames.put(LocalDate.now(), "сегодня");
@@ -26,7 +26,14 @@ public class DatesNamesContainer {
 	
 	void fillDatesNames(Path path) {
 		try {
+			boolean wasEmpty = false;
+			LocalDate ldToRemove = null;
+			if (datesNames.size() == 1 && datesNames.containsValue("сегодня")) {
+				wasEmpty = true;
+				ldToRemove = datesNames.keySet().iterator().next();
+			}
 			datesNames.putAll(parser.getAllFromDirOrZip(path));
+			if (datesNames.size() > 1) datesNames.remove(ldToRemove);
 		} catch (Exception e) {}
 	}
 	
@@ -70,6 +77,7 @@ public class DatesNamesContainer {
 	public void remove(LocalDate locDate) {
 		log.info("Request to remove: "+locDate);
 		datesNames.remove(locDate);
+		if (datesNames.size() == 0) fillDatesNames();
 	}
 	
 	public void clear() {

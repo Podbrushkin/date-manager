@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -24,21 +28,37 @@ public class Napominalka {
 	private float scaleAdditional = 2.5f;
 	private float newFontSize = defFont.getSize() * scaleRatio * scaleAdditional;
 	private JFrame frame;
-	private Image image = Toolkit.getDefaultToolkit().getImage("icon.png");
+	
+	private Image image;
+	// private Image image = Toolkit.getDefaultToolkit().getImage("icon.png");
 	private ArrayList<JTextField> textFields = new ArrayList<>();
 	// private final Font scaledFont = defFont.deriveFont(newFontSize);
 	private final Font scaledFont = new Font("Calibri", Font.PLAIN, (int)newFontSize);
 	private JPanel mainPanel;
 	private int descriptionMaxLength = 10;
 	private int descriptionAvgLength = 10;
+	private static boolean startHidden = false;
 	
 	public static void main(String[] args) {
+		var fileLock = new JustOneLock("napominalka");
+		try {
+			if (fileLock.isAppActive()) {
+				JOptionPane.showMessageDialog(null,"Программа уже запущена.","Warning",JOptionPane.WARNING_MESSAGE);
+				System.exit(1);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
 		System.setProperty("sun.java2d.uiScale", "1");
+		if (args.length == 1 && args[0].equals("--hidden")) startHidden = true;
 		try {
 			// UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {}
 		System.out.println("Locale:"+Locale.getDefault());
+		
 		
 		
 		
@@ -50,9 +70,50 @@ public class Napominalka {
 		new Napominalka().buildGui();
 		
 	}
-	
+	/* public static void assertNoOtherInstanceRunning() {
+		String userHome = System.getProperty("user.home");
+		File file = new File(userHome, "napom.lock");
+		try {
+			var fc = java.nio.channels.FileChannel.open(file.toPath(),
+					java.nio.file.StandardOpenOption.CREATE,
+					java.nio.file.StandardOpenOption.WRITE);
+			var lock = fc.tryLock();
+			if (lock == null) {
+				
+			}
+		} catch (IOException e) {
+			throw new Error(e);
+		}
+	} */
+	/* public static void assertNoOtherInstanceRunningOld() {
+		var fileLock = new File(System.getProperty("user.home")+File.separator+"napom.lock");
+		Runtime.getRuntime().addShutdownHook(new Thread(()->{
+			fileLock.delete();
+		}));
+		
+		if (fileLock.exists()) {
+			JOptionPane.showMessageDialog(null,"Программа уже запущена.","Warning",JOptionPane.WARNING_MESSAGE);
+			System.exit(1);
+		} else {
+			try {
+				fileLock.createNewFile();
+			} catch (Exception e) {System.exit(1);}
+		}
+	} */
 	
 	private void buildGui() {
+		// var urlLoader=(java.net.URLClassLoader)this.getClass().getClassLoader();
+		
+		try {
+			// var urlLoader=this.getClass().getClassLoader();
+			// image = new ImageIcon(this.getClass().getClassLoader().getResourceAsStream("icon.png").readAllBytes()).getImage();
+			
+			
+			var cur = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+			// System.out.println("path to jar:"+this.getClass().getProtectionDomain().getCodeSource().getLocation());
+			System.out.println("path to jar:"+cur);
+		} catch (Exception e) {e.printStackTrace();}
+		
 		setUIFont(new FontUIResource(scaledFont));
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
 			new Exporter().writeToFile(container.getDatesNames());
@@ -132,12 +193,13 @@ public class Napominalka {
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		
-		frame.setVisible(true);
+		if (!startHidden) frame.setVisible(true);
 	}
 
 	
 	private void addTextfieldsToPanelNew(JPanel mainPanel) {
 		mainPanel.removeAll();
+		mainPanel.revalidate();
 		var trayIcon = SystemTray.getSystemTray().getTrayIcons()[0];
 		trayIcon.setToolTip("");
 		
@@ -204,7 +266,9 @@ public class Napominalka {
 		
 		TrayIcon trayIcon = null;
 		if (SystemTray.isSupported()) {
-			
+			try {
+				image = new ImageIcon(this.getClass().getClassLoader().getResourceAsStream("icon.png").readAllBytes()).getImage();
+			} catch (Exception e) {System.err.println("Failed to load icon:"+e);}
 			SystemTray tray = SystemTray.getSystemTray();
 			
 			PopupMenu popup = new PopupMenu();
@@ -251,13 +315,70 @@ public class Napominalka {
 			popup.add(importItem);
 			
 			if (System.getProperty("os.name").contains("Windows")) {
-				var desktopDir = new java.io.File(System.getProperty("user.home") + "/Desktop");
 				MenuItem exportItem = new MenuItem("Экспорт на раб.стол");
-			
+				var desktopDir = new java.io.File(System.getProperty("user.home")+File.separator+"Desktop");
 				exportItem.addActionListener((ae) -> {
 					new Exporter().writeToFile(container.getDatesNames(), desktopDir, "NapominalkaData");
 				});
 				popup.add(exportItem);
+				
+				var autostartItem = new CheckboxMenuItem("Автозапуск");
+				var autostartDirRel = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
+				var autostartDir = new java.io.File(System.getProperty("user.home") + autostartDirRel);
+				System.out.println("autostartDir.canWrite(): "+autostartDir.canWrite());
+				try {
+					var testFile = new File(autostartDir.getAbsolutePath() + "\\NapomiTest.dll");
+					System.out.println("testFile:"+testFile);
+					System.out.println("testFile.exists():"+testFile.exists());
+					System.out.println("testFile.createNewFile():"+testFile.createNewFile());
+					System.out.println("testFile.exists():"+testFile.exists());
+					testFile.delete();
+				} catch (IOException e) {
+					System.err.println("Failed to create testfile:"+e);
+				}
+				if (autostartDir.isDirectory() && Arrays.toString(autostartDir.list()).contains("Napominalka")) {
+					autostartItem.setState(true);
+					var lnkCandidates = Arrays.stream(autostartDir.listFiles()).filter(f -> f.getName().contains("Napominalka")).toList();
+					if (lnkCandidates.size()==1) {
+						
+					}
+				} else autostartItem.setState(false);
+				
+				
+				autostartItem.addItemListener((ie) -> {
+					Path link = Path.of(autostartDir.getAbsolutePath() + "\\Napominalka.bat");
+					if (ie.getStateChange() == ItemEvent.SELECTED) {
+						try {
+							Path curJar = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).toPath();
+							
+							if (Files.exists(link)) throw new IllegalStateException("Attempt to create duplicating link!");
+							var pw = new java.io.PrintWriter(link.toFile(), "866");
+							pw.write("start javaw -jar \""+curJar.toAbsolutePath().toString()+"\" --hidden >nul\n");
+							pw.flush(); pw.close();
+							// Files.createSymbolicLink(link, curJar);
+							// var cmi = (CheckboxMenuItem) it.getItem();
+							// cmi.setState(true);
+						/* } catch (java.nio.file.FileSystemException fse) {
+							System.err.println("NO RIGHTS:" + fse.getMessage());
+							System.err.println("NO RIGHTS:" + fse.getReason());
+							System.err.println("NO RIGHTS:" + fse.getCause());
+							System.err.println("NO RIGHTS:" + Arrays.toString(fse.getSuppressed())); */
+							
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+					else if (ie.getStateChange() == ItemEvent.DESELECTED) {
+						if (Files.exists(link)) try { 
+							Files.delete(link);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						else throw new IllegalStateException("Attempt to remove unexisting link!");
+						
+					}
+				});
+				popup.add(autostartItem);
 				
 				
 			}
@@ -418,7 +539,7 @@ public class Napominalka {
 			jPopupMenu = new JPopupMenu();
 			var jMenuItemAdd = new JMenuItem("Создать");
 			jMenuItemAdd.addActionListener((ae) -> {
-				var newjp = new MyJPanel(Map.entry(LocalDate.now(), "Сегодня!"));
+				var newjp = new MyJPanel(Map.entry(LocalDate.now().plusDays(1), "Завтра"));
 				// newjp.getNameTextField().setBackground(new Color(250,250,250));
 				newjp.getNameTextField().setEditable(true);
 				newjp.getNameTextField().requestFocusInWindow();
@@ -475,7 +596,7 @@ public class Napominalka {
 				// int dtfIndex = textFields.indexOf(myjpanel.getDateTextField());
 				// textFields.remove(dtfIndex); textFields.remove(dtfIndex+1);
 				// saveChangesToContainer();
-				mainPanel.removeAll();
+				// mainPanel.removeAll();
 				addTextfieldsToPanelNew(mainPanel);
 				mainPanel.revalidate();
 				frame.revalidate();
@@ -503,9 +624,8 @@ public class Napominalka {
 				c.setEditable(false);
 				c.getCaret().setVisible(false);
 				addTextfieldsToPanelNew(mainPanel);
-				frame.pack();
-				// mainPanel.revalidate();
-				
+				mainPanel.revalidate();
+				// frame.pack();
 			});
 			
 			this.nameTf = new JTextField(entry.getValue(), Math.max(10,(int)(descriptionMaxLength*0.63)));
@@ -524,6 +644,8 @@ public class Napominalka {
 				c.getCaret().setVisible(false);
 				// System.out.println("submitName:"+container.getDatesNames());
 				saveChangesToContainer();
+				addTextfieldsToPanelNew(mainPanel);
+				mainPanel.revalidate();
 			});
 			nameTf.addMouseListener(new EditMouseListener());
 			
