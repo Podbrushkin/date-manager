@@ -112,6 +112,7 @@ public class Parser {
 						// System.out.println("pathStr"+pathStr);
 						if (type.endsWith("xml")) {
 							try (var br = Files.newBufferedReader(path)) {
+								log.debug("Going to parse XML:"+path);
 								datesNames.putAll(parseXmlFile(br));
 							} catch (IOException e) {e.printStackTrace();}
 							
@@ -159,16 +160,29 @@ public class Parser {
 			}
 		} catch (IOException e) {e.printStackTrace();}
 		
-		var stringList = sb.toString().replace(">", ">\n").lines().filter(s -> !s.startsWith("<"))
+		// var stringList = sb.toString().replace(">", ">\n").replace("</w:p>","\n").lines().filter(s -> !s.startsWith("<"))
+							// .map(s -> s.replaceAll("<....>","")).toList();
+							
+		// var stringList = sb.toString().replace(">", ">\n").replace("</w:p>","\n").lines().filter(s -> !s.startsWith("<"))
+							// .map(s -> s.replaceAll("<....>","")).toList();
+		
+		// var stringList = sb.toString().replace("<w:tab />","\t").replace("</w:p>","\n").lines().map(s->s.replaceAll("^<.*>[^<]",""))
+							// .map(s -> s.replaceAll("<....>","")).toList();
+							
+		var stringList = sb.toString().replace("<w:tab />","\t").replaceAll("<w:rPr>.{0,400}</w:rPr>", "").replaceAll("<w:pPr>.{0,220}</w:pPr>", "")
+							.replace("</w:p>","\n").replaceAll("<.{0,24}>", "")
+							.lines()
 							.map(s -> s.replaceAll("<....>","")).toList();
-		var sj = new StringJoiner(" ");
+		log.debug("stringList.size():"+stringList.size());
+		stringList.forEach(System.out::println);
+		/* var sj = new StringJoiner(" ");
 		for (String s : stringList) {
 			
 			sj.add(s.strip());
 			// System.out.println(s);
 		}
 		// if (sj.length() > 200) System.out.println(sj.toString().substring(0,200));
-		
+		// log.debug("sj.toString():"+sj.toString());
 		var st = new StringTokenizer(sj.toString(), ".;:");
 		while (st.hasMoreTokens()) {
 			var line = st.nextToken();
@@ -176,8 +190,13 @@ public class Parser {
 			var entry = parseLine(line);
 			if (entry != null)
 				localDatesNames.put(entry.getKey(), entry.getValue());
+		} */
+		for (var line : stringList) {
+			var entry = parseLine(line);
+			if (entry != null)
+				localDatesNames.put(entry.getKey(), entry.getValue());
 		}
-		// System.out.println("parseXmlFile:"+localDates);
+		log.debug("parsed from XML:"+localDatesNames);
 		return localDatesNames;
 	}
 	
