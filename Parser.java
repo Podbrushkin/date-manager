@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
 
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
 
 public class Parser {
 	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
@@ -150,7 +152,7 @@ public class Parser {
 		return datesNames;
 	}
 	
-	private Map<LocalDate, String> parseXmlFile(BufferedReader br) {
+	/* private Map<LocalDate, String> parseXmlFileOld(BufferedReader br) {
 		var localDatesNames = new HashMap<LocalDate, String>();
 		var sb = new StringBuilder();
 		try {
@@ -170,33 +172,99 @@ public class Parser {
 							// .map(s -> s.replaceAll("<....>","")).toList();
 							
 		var stringList = sb.toString().replace("<w:tab />","\t").replaceAll("<w:rPr>.{0,400}</w:rPr>", "").replaceAll("<w:pPr>.{0,220}</w:pPr>", "")
-							.replace("</w:p>","\n").replaceAll("<.{0,24}>", "")
-							.lines()
-							.map(s -> s.replaceAll("<....>","")).toList();
+							.replace("</w:p>","\n").lines().peek(s -> {if (s.contains("Омар")) System.out.println(s);})
+								.peek(s -> {if (s.contains("Омар")) System.out.println(s);})
+									.map(s -> s.replaceAll("<.{0,81}>","")).toList();
 		log.debug("stringList.size():"+stringList.size());
 		stringList.forEach(System.out::println);
-		/* var sj = new StringJoiner(" ");
-		for (String s : stringList) {
+		// var sj = new StringJoiner(" ");
+		// for (String s : stringList) {
 			
-			sj.add(s.strip());
-			// System.out.println(s);
-		}
-		// if (sj.length() > 200) System.out.println(sj.toString().substring(0,200));
-		// log.debug("sj.toString():"+sj.toString());
-		var st = new StringTokenizer(sj.toString(), ".;:");
-		while (st.hasMoreTokens()) {
-			var line = st.nextToken();
-			// if (line.contains("1870")) log.debug("line:"+line);
-			var entry = parseLine(line);
-			if (entry != null)
-				localDatesNames.put(entry.getKey(), entry.getValue());
-		} */
+			// sj.add(s.strip());
+			// // System.out.println(s);
+		// }
+		// // if (sj.length() > 200) System.out.println(sj.toString().substring(0,200));
+		// // log.debug("sj.toString():"+sj.toString());
+		// var st = new StringTokenizer(sj.toString(), ".;:");
+		// while (st.hasMoreTokens()) {
+			// var line = st.nextToken();
+			// // if (line.contains("1870")) log.debug("line:"+line);
+			// var entry = parseLine(line);
+			// if (entry != null)
+				// localDatesNames.put(entry.getKey(), entry.getValue());
+		// }
 		for (var line : stringList) {
 			var entry = parseLine(line);
 			if (entry != null)
 				localDatesNames.put(entry.getKey(), entry.getValue());
 		}
 		log.debug("parsed from XML:"+localDatesNames);
+		return localDatesNames;
+	} */
+	
+	/* private Map<LocalDate, String> parseXmlFileOld2(BufferedReader br) {
+		try {
+			var handler = new org.xml.sax.helpers.DefaultHandler() {
+				@Override
+				public void startElement(String uri, String localName, String qName, org.xml.sax.Attributes attributes) {
+					System.out.println(attributes);
+					System.out.println(uri);
+					System.out.println(localName);
+					System.out.println(qName);
+					if (qName.contains("text")) System.out.println("el: "+uri);
+				}
+				@Override
+				public void characters(char[] ch, int start, int length) {
+					System.out.println(ch);
+				}
+			};
+			
+			
+			var factory = javax.xml.parsers.SAXParserFactory.newInstance();
+			var parser = factory.newSAXParser();
+			parser.parse(new org.xml.sax.InputSource(br), handler);
+			
+			
+		} catch (Exception e) {System.err.println(e);}
+		return null;
+	} */
+	
+	private Map<LocalDate, String> parseXmlFile(BufferedReader br) {
+		var localDatesNames = new HashMap<LocalDate, String>();
+		var sb = new StringBuilder();
+		try {
+			var xmlInputFactory = XMLInputFactory.newInstance();
+			var reader = xmlInputFactory.createXMLEventReader(br);
+
+			while (reader.hasNext()) {
+				XMLEvent event = reader.nextEvent();
+				if (event.isStartElement()) {
+					var element = event.asStartElement();
+					switch (element.getName().getLocalPart()) {
+						case "t":
+							event = reader.nextEvent();
+							if (event.isCharacters()) sb.append(event.asCharacters().getData());
+							break;
+						case "tab":
+							sb.append("\t");
+							break;
+					}
+					
+				} else if (event.isEndElement()) {
+					var element = event.asEndElement();
+					if (element.getName().getLocalPart().equals("p")) {
+						sb.append("\n");
+					}
+				}
+			}
+		} catch (Exception e) {System.err.println(e);}
+		
+		var stringList = sb.toString().lines().toList();
+		for (var line : stringList) {
+			var entry = parseLine(line);
+			if (entry != null)
+				localDatesNames.put(entry.getKey(), entry.getValue());
+		}
 		return localDatesNames;
 	}
 	
