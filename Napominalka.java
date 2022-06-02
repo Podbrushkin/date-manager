@@ -60,44 +60,9 @@ public class Napominalka {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {}
 		
-		// var prop = UIManager.getString("FileChooser.lookInLabelText", Locale.getDefault());
-		// System.out.println("prop:"+prop);
-		// Locale.setDefault(Locale.RUSSIAN); 
-		// System.out.println("Locale:"+Locale.getDefault());
-		
 		new Napominalka().buildGui();
 		
 	}
-	/* public static void assertNoOtherInstanceRunning() {
-		String userHome = System.getProperty("user.home");
-		File file = new File(userHome, "napom.lock");
-		try {
-			var fc = java.nio.channels.FileChannel.open(file.toPath(),
-					java.nio.file.StandardOpenOption.CREATE,
-					java.nio.file.StandardOpenOption.WRITE);
-			var lock = fc.tryLock();
-			if (lock == null) {
-				
-			}
-		} catch (IOException e) {
-			throw new Error(e);
-		}
-	} */
-	/* public static void assertNoOtherInstanceRunningOld() {
-		var fileLock = new File(System.getProperty("user.home")+File.separator+"napom.lock");
-		Runtime.getRuntime().addShutdownHook(new Thread(()->{
-			fileLock.delete();
-		}));
-		
-		if (fileLock.exists()) {
-			JOptionPane.showMessageDialog(null,"Программа уже запущена.","Warning",JOptionPane.WARNING_MESSAGE);
-			System.exit(1);
-		} else {
-			try {
-				fileLock.createNewFile();
-			} catch (Exception e) {System.exit(1);}
-		}
-	} */
 	
 	private void buildGui() {
 		// var urlLoader=(java.net.URLClassLoader)this.getClass().getClassLoader();
@@ -365,14 +330,6 @@ public class Napominalka {
 							var pw = new java.io.PrintWriter(link.toFile(), "866");
 							pw.write("start javaw -jar \""+curJar.toAbsolutePath().toString()+"\" --hidden >nul\n");
 							pw.flush(); pw.close();
-							// Files.createSymbolicLink(link, curJar);
-							// var cmi = (CheckboxMenuItem) it.getItem();
-							// cmi.setState(true);
-						/* } catch (java.nio.file.FileSystemException fse) {
-							System.err.println("NO RIGHTS:" + fse.getMessage());
-							System.err.println("NO RIGHTS:" + fse.getReason());
-							System.err.println("NO RIGHTS:" + fse.getCause());
-							System.err.println("NO RIGHTS:" + Arrays.toString(fse.getSuppressed())); */
 							
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -425,6 +382,7 @@ public class Napominalka {
 							frame.setExtendedState(JFrame.NORMAL);
 							frame.setAlwaysOnTop(true);
 							frame.setAlwaysOnTop(false);
+							System.out.println("toFocus:"+myjpanelToFocus.getBounds());
 							mainPanel.scrollRectToVisible(myjpanelToFocus.getBounds());
 						}
 					}
@@ -550,10 +508,10 @@ public class Napominalka {
 			jPopupMenu = new JPopupMenu();
 			var jMenuItemAdd = new JMenuItem("Создать");
 			jMenuItemAdd.addActionListener((ae) -> {
-				var newjp = new MyJPanel(Map.entry(LocalDate.now().plusDays(1), "Завтра"));
+				var newjp = new MyJPanel(Map.entry(LocalDate.now().plusDays(1), "(описание)"));
 				// newjp.getNameTextField().setBackground(new Color(250,250,250));
-				newjp.getNameTextField().setEditable(true);
-				newjp.getNameTextField().requestFocusInWindow();
+				newjp.getDateTextField().setEditable(true);
+				newjp.getDateTextField().requestFocusInWindow();
 				textFields.add(newjp.getDateTextField());
 				textFields.add(newjp.getNameTextField());
 				mainPanel.add(newjp);
@@ -623,19 +581,51 @@ public class Napominalka {
 			dateTf.setComponentPopupMenu(jPopupMenu);
 			dateTf.addMouseListener(new EditMouseListener());
 			dateTf.addActionListener(ae -> {	//change date or remove entry
-				
+				// final String locDateStr;
+				boolean changed = false;
 				JTextField c = (JTextField) ae.getSource();
 				if (!c.getText().equals("") && !new Parser().isValidDate(c.getText())) return;
 				if (c.getText().equals("")) {
 					container.remove(entry.getKey());
 				} else if (new Parser().isValidDate(c.getText())) {
+					
+					changed = true;
 					saveChangesToContainer();
 				}
 				c.setEditable(false);
 				c.getCaret().setVisible(false);
 				addTextfieldsToPanelNew(mainPanel);
 				mainPanel.revalidate();
-				// frame.pack();
+				
+				//	scroll to edited myjpanel
+				if (changed) {
+					var locDateStr = new Parser().parseSmallToken(c.getText()).format(DateTimeFormatter.ofPattern("d MMMM y"));
+					var list = Arrays.asList(mainPanel.getComponents()).stream().filter(comp -> comp instanceof MyJPanel)
+							.filter(comp -> {
+								if (comp instanceof MyJPanel) {
+									var myjp = (MyJPanel) comp;
+									return myjp.getDateTextField().getText().equals(locDateStr);
+								} else return false;
+							}).toList();
+					if (list.size()==1) {
+						
+						// var changedJPanel = (MyJPanel) list.get(0);
+						var changedJPanel = list.get(0);
+						
+						// System.out.println("HERE>>"+changedJPanel.getDateTextField().getText());
+						// System.out.printf("HERE>>%s >>%s\n",changedJPanel.hashCode(),changedJPanel.getBounds());
+						
+						
+						// Arrays.asList(mainPanel.getComponents()).stream().forEach(cmp -> System.out.println(cmp.hashCode()+">>"+cmp.getBounds()));
+						// System.out.println("contains:"+Arrays.asList(mainPanel.getComponents()).contains(changedJPanel));
+						
+						mainPanel.scrollRectToVisible(changedJPanel.getBounds());
+						var bounds = new Rectangle(changedJPanel.getBounds());
+						bounds.height = bounds.height*8;
+						mainPanel.scrollRectToVisible(bounds);
+						System.out.printf("HERE>>%s >>%s\n",changedJPanel.hashCode(),changedJPanel.getBounds());
+					}
+				}
 			});
 			
 			this.nameTf = new JTextField(entry.getValue(), Math.max(10,(int)(descriptionMaxLength*0.63)));
@@ -661,31 +651,6 @@ public class Napominalka {
 			
 			this.add(dateTf);
 			this.add(nameTf);
-			
-			
-			// this.setComponentPopupMenu(jPopupMenu);
-			
-			/* this.setComponentPopupMenu(new JPopupMenu() {
-				var jMenuItem = new JMenuItem("Удалить");
-				public JPopupMenu() {
-					this.add(jMenuItem);
-					jMenuItem.addActionListener((ae) -> {
-						System.out.println(ae.getSource());
-					});
-				}
-			}); */
-			
-			/* this.addMouseListener(new MouseAdapter() {
-				public void mouseClicked(MouseEvent e) {
-					// if (e.getButton()==3) {
-						var comp = e.getComponent();
-						jPopupMenu.show(comp, e.getX(), e.getY());
-					// }
-				}
-			}); */
-			
-			
-			
 		}
 		
 		public JTextField getDateTextField() { return dateTf; }
