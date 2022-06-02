@@ -88,7 +88,7 @@ public class Parser {
 		final Map<LocalDate, String> datesNames = new HashMap<LocalDate, String>();
 		if (pathRoot == null) return datesNames;
 		List<Path> paths = new LinkedList<Path>();
-		System.out.println("pathRoot:"+pathRoot);
+		log.debug("pathRoot:"+pathRoot);
 		// FileSystems.newFileSystem(pathToZip, Collections.emptyMap())
 		FileSystem fs = null;
 		String contentType = Files.probeContentType(pathRoot);
@@ -102,7 +102,7 @@ public class Parser {
 				}
 			} catch (IOException e) {e.printStackTrace();}
 		} else paths.add(pathRoot);
-		System.out.println("paths:"+paths);
+		log.debug("paths:"+paths);
 		paths.forEach(root -> {
 			// Files.walk(root).forEach(path -> Files.copy(path, toDirectory));
 			try {

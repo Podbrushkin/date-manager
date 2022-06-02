@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.File;
 
 public class Exporter {
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	public static File dirForData = new File(System.getProperty("user.home")+File.separator+".napominalka");
 	public void writeToFile(Map<LocalDate, String> datesNames) {
 		writeToFile(datesNames, "data");
@@ -44,7 +45,7 @@ public class Exporter {
 	
 	public void writeToFile(Map<LocalDate, String> datesNames, String fileName) {
 		if (!dirForData.isDirectory()) dirForData.mkdir();
-		System.out.println("Writing to folder "+dirForData);
+		log.info("Writing to folder "+dirForData);
 		writeToFile(datesNames, dirForData, fileName);
 		
 	}

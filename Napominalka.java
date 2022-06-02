@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class Napominalka {
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private DatesNamesContainer container = new DatesNamesContainer();
 	// private TreeMap<LocalDate, String> datesNames = DatesNamesContainer.getDatesNames();
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -57,10 +58,6 @@ public class Napominalka {
 			// UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {}
-		System.out.println("Locale:"+Locale.getDefault());
-		
-		
-		
 		
 		// var prop = UIManager.getString("FileChooser.lookInLabelText", Locale.getDefault());
 		// System.out.println("prop:"+prop);
@@ -111,7 +108,7 @@ public class Napominalka {
 			
 			var cur = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
 			// System.out.println("path to jar:"+this.getClass().getProtectionDomain().getCodeSource().getLocation());
-			System.out.println("path to jar:"+cur);
+			log.debug("path to jar:"+cur);
 		} catch (Exception e) {e.printStackTrace();}
 		
 		setUIFont(new FontUIResource(scaledFont));
@@ -128,7 +125,6 @@ public class Napominalka {
 					frame.setExtendedState(JFrame.NORMAL);
 				} else
 				if (we.getNewState() == WindowEvent.WINDOW_CLOSING) {
-					System.out.println("FIRE!");
 					new Exporter().writeToFile(container.getDatesNames());
 				}
 		   }
@@ -187,12 +183,14 @@ public class Napominalka {
 		jsp.getHorizontalScrollBar().setUnitIncrement((int)newFontSize);
 		// jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		// background.add(addButton, BorderLayout.SOUTH);
-		
 		background.add(jsp, BorderLayout.WEST);
+		
+		
+		
 		frame.getContentPane().add(background);
+		addDraggingFileSupport(frame);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
-		
 		if (!startHidden) frame.setVisible(true);
 	}
 
@@ -261,6 +259,26 @@ public class Napominalka {
 		System.out.println("Number of changes: "+changes);
 	}
 	
+	private void addDraggingFileSupport(Component comp) {
+		
+		comp.setDropTarget(new java.awt.dnd.DropTarget() {
+			public synchronized void drop(java.awt.dnd.DropTargetDropEvent evt) {
+				try {
+					evt.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
+					var droppedFiles = (java.util.List<File>)
+						evt.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
+					for (File file : droppedFiles) {
+						container.fillDatesNames(file.toPath());
+						addTextfieldsToPanelNew(mainPanel);
+						mainPanel.revalidate();
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		});
+		
+	}
 	
 	private void addTrayIcon() {
 		
@@ -324,18 +342,8 @@ public class Napominalka {
 				
 				var autostartItem = new CheckboxMenuItem("Автозапуск");
 				var autostartDirRel = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
-				var autostartDir = new java.io.File(System.getProperty("user.home") + autostartDirRel);
-				System.out.println("autostartDir.canWrite(): "+autostartDir.canWrite());
-				try {
-					var testFile = new File(autostartDir.getAbsolutePath() + "\\NapomiTest.dll");
-					System.out.println("testFile:"+testFile);
-					System.out.println("testFile.exists():"+testFile.exists());
-					System.out.println("testFile.createNewFile():"+testFile.createNewFile());
-					System.out.println("testFile.exists():"+testFile.exists());
-					testFile.delete();
-				} catch (IOException e) {
-					System.err.println("Failed to create testfile:"+e);
-				}
+				var autostartDir = new File(System.getProperty("user.home") + autostartDirRel);
+				
 				if (autostartDir.isDirectory() && Arrays.toString(autostartDir.list()).contains("Napominalka")) {
 					autostartItem.setState(true);
 					var lnkCandidates = Arrays.stream(autostartDir.listFiles()).filter(f -> f.getName().contains("Napominalka")).toList();
@@ -590,7 +598,6 @@ public class Napominalka {
 				var myjpanel = (MyJPanel) myjtf.getParent();
 				String selDateStr = myjpanel.getDateTextField().getText();
 				LocalDate selectedDate = new Parser().parseSmallToken(selDateStr);
-				System.err.printf("Request to remove all\n");
 				container.clear();
 				new Exporter().writeToFile(container.getDatesNames());
 				// int dtfIndex = textFields.indexOf(myjpanel.getDateTextField());
