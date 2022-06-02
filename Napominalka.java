@@ -36,6 +36,7 @@ public class Napominalka {
 	// private final Font scaledFont = defFont.deriveFont(newFontSize);
 	private final Font scaledFont = new Font("Calibri", Font.PLAIN, (int)newFontSize);
 	private JPanel mainPanel;
+	private MyJPanel myjpanelToFocus = null;
 	private int descriptionMaxLength = 10;
 	private int descriptionAvgLength = 10;
 	private static boolean startHidden = false;
@@ -163,19 +164,6 @@ public class Napominalka {
 		var fDimension = new Dimension(framePreferredWidth, framePreferredHeight);
 		frame.setPreferredSize(fDimension);
 		
-		/* var addButton = new JButton("+");
-		addButton.setFont(scaledFont.deriveFont(Font.BOLD, scaledFont.getSize()*1.2f));
-		addButton.setMargin(new Insets(20,0,0,0));
-		addButton.addActionListener((ae) -> {
-			var newjp = new MyJPanel(Map.entry(LocalDate.of(1900, 12, 1), "описание"));
-			textFields.add(newjp.getDateTextField());
-			textFields.add(newjp.getNameTextField());
-			mainPanel.add(newjp);
-			frame.pack();
-			// mainPanel.repaint();
-			// mainPanel.revalidate();
-			// background.revalidate();
-		}); */
 		var jsp = new JScrollPane(mainPanel);
 		var jsbar = jsp.getVerticalScrollBar();
 		jsbar.setPreferredSize(new Dimension((int)(jsbar.getPreferredSize().getWidth()*scaleAdditional), 0));
@@ -189,6 +177,7 @@ public class Napominalka {
 		
 		frame.getContentPane().add(background);
 		addDraggingFileSupport(frame);
+		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		if (!startHidden) frame.setVisible(true);
@@ -224,6 +213,7 @@ public class Napominalka {
 				if (!trayIcon.getToolTip().contains("Сегодня!")) {
 					String message = String.format("Ближайшая дата: %s %s", entry.getKey(), entry.getValue());
 					trayIcon.setToolTip(message);
+					myjpanelToFocus = myjp;
 				}
 			}
 			if (entry.getKey().withYear(0).equals(LocalDate.now().withYear(0))) {
@@ -231,13 +221,15 @@ public class Napominalka {
 				String message = String.format("Ближайшая дата: Сегодня! (%s)", entry.getValue());
 				if (trayIcon.getToolTip().contains("Сегодня!")) message = message + "+++";
 				trayIcon.setToolTip(message);
+				myjpanelToFocus = myjp;
 			}
 		}
 		// frame.setMaximumSize(frame.getPreferredSize());
 		// frame.setMaximumSize(new Dimension(20,20));
 		textFields = tfields;
 		
-		
+		// for (var comp : mainPanel.getComponents()) addDraggingFileSupport(comp);
+		for (var comp : textFields) addDraggingFileSupport(comp);
 	}
 	
 	private void saveChangesToContainer() {
@@ -263,17 +255,27 @@ public class Napominalka {
 		
 		comp.setDropTarget(new java.awt.dnd.DropTarget() {
 			public synchronized void drop(java.awt.dnd.DropTargetDropEvent evt) {
-				try {
-					evt.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
-					var droppedFiles = (java.util.List<File>)
-						evt.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
-					for (File file : droppedFiles) {
-						container.fillDatesNames(file.toPath());
-						addTextfieldsToPanelNew(mainPanel);
-						mainPanel.revalidate();
+				var supportedFlavor = java.awt.datatransfer.DataFlavor.javaFileListFlavor;
+				if (evt.getCurrentDataFlavorsAsList().contains(supportedFlavor))
+					try {
+						// for (var flavor : evt.getCurrentDataFlavors()) System.out.println(flavor);
+						
+						evt.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
+						var droppedFiles = (java.util.List<File>)
+							evt.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
+						for (File file : droppedFiles) {
+							container.fillDatesNames(file.toPath());
+							addTextfieldsToPanelNew(mainPanel);
+							mainPanel.revalidate();
+						}
+						evt.dropComplete(true);
+					} catch (Exception ex) {
+						ex.printStackTrace();
+						evt.dropComplete(false);
 					}
-				} catch (Exception ex) {
-					ex.printStackTrace();
+				else {
+					evt.rejectDrop();
+					evt.dropComplete(false);
 				}
 			}
 		});
@@ -423,6 +425,7 @@ public class Napominalka {
 							frame.setExtendedState(JFrame.NORMAL);
 							frame.setAlwaysOnTop(true);
 							frame.setAlwaysOnTop(false);
+							mainPanel.scrollRectToVisible(myjpanelToFocus.getBounds());
 						}
 					}
 				}
