@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.File;
+import javax.swing.JOptionPane;
 
 public class Exporter {
 	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
@@ -16,13 +17,20 @@ public class Exporter {
 	}
 	
 	public void writeToFile(Map<LocalDate, String> datesNames, File directory, String fileName) {
-		if (!directory.isDirectory()) throw new IllegalArgumentException("can't write here: "+directory);
+		if (!directory.isDirectory()) {
+			var msg = String.format("Ошибка записи в файл! %n %s %n directory=%s; isDir()=%s;%nfilename=%s",
+				this.getClass(), directory, directory.isDirectory(), fileName);
+			JOptionPane.showMessageDialog(null, msg,"Error",JOptionPane.ERROR_MESSAGE);
+			throw new IllegalArgumentException("can't write here: "+directory);
+		}
 		fileName = fileName.replaceAll("[\\\\/]","");
 		var file = new File(directory, fileName+".tsv");
 		try {
 			file.createNewFile();
 		} catch (IOException e) {
 			System.err.println("Failed to create tsv file");
+			JOptionPane.showMessageDialog(null, "Ошибка создания файла: "+file,
+				"Error",JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		
@@ -39,6 +47,9 @@ public class Exporter {
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to write to file.");
+			JOptionPane.showMessageDialog(null, "Ошибка записи в файл через PrintWriter: "+file,
+				"Error",JOptionPane.ERROR_MESSAGE);
+			throw new IllegalArgumentException("can't write here: "+file);
 		}
 		
 	}
