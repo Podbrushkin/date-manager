@@ -9,6 +9,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>18</maven.compiler.source>
 		<maven.compiler.target>18</maven.compiler.target>
+		<!-- <jar.finalName>Napominalka</jar.finalName> -->
 	</properties>
 	
 	<dependencies>
@@ -46,6 +47,7 @@
 	</dependencies>
 	
 	<build>
+		<finalName>Napominalka</finalName>
 		<plugins>
 		  <plugin>
 			<artifactId>maven-assembly-plugin</artifactId>
@@ -58,47 +60,39 @@
 			  </execution>
 			</executions>
 			<configuration>
-			  <descriptorRefs>
-				<descriptorRef>jar-with-dependencies</descriptorRef>
-			  </descriptorRefs>
+				<archive>
+					<manifest>
+						<mainClass>napominalka.Napominalka</mainClass>
+					</manifest>
+				</archive>
+				<descriptorRefs>
+					<descriptorRef>jar-with-dependencies</descriptorRef>
+				</descriptorRefs>
 			</configuration>
 		  </plugin>
+		  
 		  <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>3.0.0</version>
-            <configuration>
-                <mainClass>napominalka.Napominalka</mainClass>
-            </configuration>
-        </plugin>
-		
-		<!-- uncomment this to let maven describe warnings -->
-		<!-- <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-compiler-plugin</artifactId>
-			<version>3.8.0</version>
-			<executions>
-				<execution>
-					<id>compile</id>
-					<phase>compile</phase>
-					<goals>
-						<goal>compile</goal>
-					</goals>
-				</execution>
-				<execution>
-					<id>testCompile</id>
-					<phase>test-compile</phase>
-					<goals>
-						<goal>testCompile</goal>
-					</goals>
-				</execution>
-			</executions>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>exec-maven-plugin</artifactId>
+			<version>3.0.0</version>
 			<configuration>
-				<compilerArgument>-Xlint:all</compilerArgument>
-				<showWarnings>true</showWarnings>
-				<showDeprecation>true</showDeprecation>
+				<mainClass>napominalka.Napominalka</mainClass>
 			</configuration>
-		</plugin> -->
+		</plugin>
+		
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-jar-plugin</artifactId>
+			<version>3.2.2</version>
+			<configuration>
+			  <archive>
+				<manifest>
+				  <addClasspath>true</addClasspath>
+				  <mainClass>napominalka.Napominalka</mainClass>
+				</manifest>
+			  </archive>
+			</configuration>
+		</plugin>
 
 		</plugins>
 	</build>
