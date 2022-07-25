@@ -10,12 +10,19 @@
             <PatternLayout pattern="%highlight{%-5level %c{.}.%method()\t - %msg%n}{TRACE=white}" 
 				charset="866" disableAnsi="false"/>
         </Console>
+		
+		<File name="LogToFile" fileName="NapomLogs/napominalka.log">
+            <PatternLayout>
+                <Pattern>[%level %d{dd-MM-yyyy HH:mm:ss} %logger{.}.%method()] %msg%n</Pattern>
+            </PatternLayout>
+        </File>
     </Appenders>
 	
 	
     <Loggers>
-        <Logger name="napominalka.Parser" level="debug" additivity="false">
+        <Logger name="napominalka" level="debug" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
         <Root level="trace">
             <AppenderRef ref="LogToConsole"/>
