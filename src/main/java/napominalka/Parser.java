@@ -24,8 +24,9 @@ import java.io.BufferedReader;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 
+@lombok.extern.slf4j.Slf4j
 public class Parser {
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
+	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("ru"));
 	private DateTimeFormatter dtfAsIs = DateTimeFormatter.ofPattern("d LLLL yyyy", Locale.forLanguageTag("ru"));
 	
@@ -67,9 +68,9 @@ public class Parser {
 			}
 			System.out.printf("Parsed dates: %s\n",datesNames.size());
 			for (var entry : datesNames.entrySet()) {
-				// System.out.printf("%s = %s\n",entry.getKey(), entry.getValue());
+				System.out.printf("%s = %s\n",entry.getKey(), entry.getValue());
 			}
-			new Exporter().writeToFile(new TreeMap(datesNames), "famous.tsv");
+			// new Exporter().writeToFile(new TreeMap(datesNames), "famous.tsv");
 		} else if (args.length == 2 && args[0].equals("--zip")) {
 			var datesNames = new Parser().getAllFromDirOrZip(Path.of(args[1]));
 			datesNames = new TreeMap<LocalDate, String>(datesNames);

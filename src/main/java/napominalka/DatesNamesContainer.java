@@ -5,8 +5,9 @@ import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.nio.file.Path;
 
+@lombok.extern.slf4j.Slf4j
 public class DatesNamesContainer {
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
+	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private Parser parser = new Parser();
 	private TreeMap<LocalDate, String> datesNames = new TreeMap<>();
 	
@@ -16,10 +17,12 @@ public class DatesNamesContainer {
 	}
 	
 	private void fillDatesNames() {
+		var importFile = Exporter.getDefaultDataFile();
+		log.info("Fetching dates and names from file: {}",importFile);
 		try {
-			datesNames.putAll(parser.parseTsv(Path.of(Exporter.dirForData.getAbsolutePath()+java.io.File.separator+"data.tsv")));
+			datesNames.putAll(parser.parseTsv(importFile.toPath()));
 		} catch (Exception e) {
-			System.out.println("Failed to parse from tsv");
+			log.warn("Failed to parse from tsv {}, putting dummy instead",importFile,e);
 			datesNames.put(LocalDate.now(), "сегодня");
 		}
 	}
@@ -50,7 +53,7 @@ public class DatesNamesContainer {
 		return false;
 	}
 	public boolean overwriteIfExists(String date, String name) {
-		log.debug("dns in:"+datesNames);
+		log.trace("datesNames.size()={}, input: date={}, name={}",datesNames.size(), date, name);
 		if (!parser.isValidDate(date)) return false;
 		// System.out.printf("datesNamesCont:%s %s\n",date,name);
 		var locDate = parser.parseSmallToken(date);

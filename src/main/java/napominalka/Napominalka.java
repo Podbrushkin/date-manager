@@ -19,8 +19,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+@lombok.extern.slf4j.Slf4j
 public class Napominalka {
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
+	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private DatesNamesContainer container = new DatesNamesContainer();
 	// private TreeMap<LocalDate, String> datesNames = DatesNamesContainer.getDatesNames();
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -122,7 +123,7 @@ public class Napominalka {
 		double minTfLength = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getWidth()).min().getAsDouble();
 		double maxTfLength = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getWidth()).max().getAsDouble();
 		double maxTfHeight = textFields.stream().mapToDouble(tf -> tf.getPreferredSize().getHeight()).max().getAsDouble();
-		System.out.println("maxTfLength:"+maxTfLength);
+		log.trace("maxTfLength:"+maxTfLength);
 		int framePreferredWidth = (int)Math.max(minTfLength*2.2, minTfLength+maxTfLength*1.1);
 		int frameMinimalHeight = (int)Math.max(maxTfHeight*textFields.size()*0.8, screenSize.getHeight()*0.15);
 		int framePreferredHeight = (int)Math.min((screenSize.getHeight()*0.7), frameMinimalHeight);
@@ -213,7 +214,7 @@ public class Napominalka {
 		// textFields.forEach(tf -> System.out.print(tf.getText()+" "));
 		// System.out.printf("tfnumber and datesnames num:%s %s",textFields.size(), container.getDatesNames().size());
 		if (changes > 0) new Exporter().writeToFile(container.getDatesNames());
-		System.out.println("Number of changes: "+changes);
+		log.trace("Number of changes: "+changes);
 	}
 	
 	private void addDraggingFileSupport(Component comp) {
@@ -253,7 +254,7 @@ public class Napominalka {
 		if (SystemTray.isSupported()) {
 			try {
 				image = new ImageIcon(this.getClass().getClassLoader().getResourceAsStream("icon.png").readAllBytes()).getImage();
-			} catch (Exception e) {System.err.println("Failed to load icon:"+e);}
+			} catch (Exception e) {log.error("Failed to load icon:",e);}
 			SystemTray tray = SystemTray.getSystemTray();
 			
 			PopupMenu popup = new PopupMenu();
@@ -270,7 +271,7 @@ public class Napominalka {
 				fileChooser.setPreferredSize(d);
 				// System.out.println(System.getProperty("os.name"));
 				if (System.getProperty("os.name").contains("Windows"))
-					fileChooser.setCurrentDirectory(new java.io.File(System.getProperty("user.home") + "/Desktop"));
+					fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")+File.separator+"Desktop"));
 				
 				fileChooser.setFileView(new javax.swing.filechooser.FileView() {
 					public Icon getIcon(java.io.File f) {
@@ -303,7 +304,7 @@ public class Napominalka {
 				MenuItem exportItem = new MenuItem("Экспорт на раб.стол");
 				var desktopDir = new java.io.File(System.getProperty("user.home")+File.separator+"Desktop");
 				exportItem.addActionListener((ae) -> {
-					new Exporter().writeToFile(container.getDatesNames(), desktopDir, "NapominalkaData");
+					new Exporter().writeToFolder(container.getDatesNames(), desktopDir);
 				});
 				popup.add(exportItem);
 				
@@ -312,6 +313,7 @@ public class Napominalka {
 				var autostartDir = new File(System.getProperty("user.home") + autostartDirRel);
 				
 				if (autostartDir.isDirectory() && Arrays.toString(autostartDir.list()).contains("Napominalka")) {
+					log.info("App's link detected in autostart");
 					autostartItem.setState(true);
 					var lnkCandidates = Arrays.stream(autostartDir.listFiles()).filter(f -> f.getName().contains("Napominalka")).toList();
 					if (lnkCandidates.size()==1) {
@@ -321,27 +323,34 @@ public class Napominalka {
 				
 				
 				autostartItem.addItemListener((ie) -> {
-					Path link = Path.of(autostartDir.getAbsolutePath() + "\\Napominalka.bat");
+					Path link = autostartDir.toPath().resolve("Napominalka.bat");
 					if (ie.getStateChange() == ItemEvent.SELECTED) {
 						try {
 							Path curJar = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).toPath();
 							
-							if (Files.exists(link)) throw new IllegalStateException("Attempt to create duplicating link!");
+							if (Files.exists(link)) {
+								log.error("Attempt to create duplicating autostart link - checkbox is in wrong state");
+								return;
+							}
+							
 							var pw = new java.io.PrintWriter(link.toFile(), "866");
 							pw.write("start javaw -jar \""+curJar.toAbsolutePath().toString()+"\" --hidden >nul\n");
 							pw.flush(); pw.close();
+							log.info("Autostart link created: pathToApp=[{}], link=[{}]",curJar,link);
 							
 						} catch (Exception e) {
-							e.printStackTrace();
+							log.error("Failed to add app to autostart",e);
 						}
 					}
 					else if (ie.getStateChange() == ItemEvent.DESELECTED) {
-						if (Files.exists(link)) try { 
-							Files.delete(link);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-						else throw new IllegalStateException("Attempt to remove unexisting link!");
+						if (Files.exists(link)) 
+							try { 
+								Files.delete(link);
+								log.info("Autostart link deleted: {}",link);
+							} catch (Exception e) {
+								log.error("Failed to remove app from autostart",e);
+							}
+						else log.error("Attempt to remove unexisting link!");
 						
 					}
 				});
@@ -382,7 +391,7 @@ public class Napominalka {
 							frame.setExtendedState(JFrame.NORMAL);
 							frame.setAlwaysOnTop(true);
 							frame.setAlwaysOnTop(false);
-							System.out.println("toFocus:"+myjpanelToFocus.getBounds());
+							// System.out.println("toFocus:"+myjpanelToFocus.getBounds());
 							mainPanel.scrollRectToVisible(myjpanelToFocus.getBounds());
 						}
 					}
@@ -395,7 +404,7 @@ public class Napominalka {
 			try {
 				tray.add(trayIcon);
 			} catch (AWTException e) {
-				System.err.println(e);
+				log.error("Failed to add TrayIcon to Tray",e);
 			}
 		}
 		
@@ -537,7 +546,7 @@ public class Napominalka {
 				var myjpanel = (MyJPanel) myjtf.getParent();
 				String selDateStr = myjpanel.getDateTextField().getText();
 				LocalDate selectedDate = new Parser().parseSmallToken(selDateStr);
-				System.err.printf("Request to remove: %s %s",myjpanel.getDateTextField().getText(), myjpanel.getNameTextField().getText());
+				// System.err.printf("Request to remove: %s %s",myjpanel.getDateTextField().getText(), myjpanel.getNameTextField().getText());
 				container.remove(selectedDate);
 				new Exporter().writeToFile(container.getDatesNames());
 				// int dtfIndex = textFields.indexOf(myjpanel.getDateTextField());
@@ -623,7 +632,7 @@ public class Napominalka {
 						var bounds = new Rectangle(changedJPanel.getBounds());
 						bounds.height = bounds.height*8;
 						mainPanel.scrollRectToVisible(bounds);
-						System.out.printf("HERE>>%s >>%s\n",changedJPanel.hashCode(),changedJPanel.getBounds());
+						// System.out.printf("HERE>>%s >>%s\n",changedJPanel.hashCode(),changedJPanel.getBounds());
 					}
 				}
 			});

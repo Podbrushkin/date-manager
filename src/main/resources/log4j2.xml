@@ -13,7 +13,7 @@
 		
 		<File name="LogToFile" fileName="NapomLogs/napominalka.log">
             <PatternLayout>
-                <Pattern>[%level %d{dd-MM-yyyy HH:mm:ss} %logger{.}.%method()] %msg%n</Pattern>
+                <Pattern>[%level %d{dd-MM-yyyy HH:mm:ss} %logger{1}.%method()] %msg%n</Pattern>
             </PatternLayout>
         </File>
     </Appenders>
