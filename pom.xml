@@ -1,0 +1,106 @@
+<project>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.example</groupId>
+	<artifactId>_________</artifactId>
+	<version>0.1</version>
+	<packaging>jar</packaging>
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>18</maven.compiler.source>
+		<maven.compiler.target>18</maven.compiler.target>
+	</properties>
+	
+	<dependencies>
+		<dependency>
+			<groupId>com.github.sisyphsu</groupId>
+			<artifactId>dateparser</artifactId>
+			<version>1.0.10</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.github.albfernandez</groupId>
+			<artifactId>juniversalchardet</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		
+		<!-- <dependency> -->
+			<!-- <groupId>org.slf4j</groupId> -->
+			<!-- <artifactId>slf4j-api</artifactId> -->
+			<!-- <version>1.7.36</version> -->
+		<!-- </dependency> -->
+		
+		<!-- <dependency> -->
+			<!-- <groupId>org.apache.logging.log4j</groupId> -->
+			<!-- <artifactId>log4j-core</artifactId> -->
+			<!-- <version>2.18.0</version> -->
+		<!-- </dependency> -->
+		
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>2.18.0</version>
+		</dependency>
+
+
+	</dependencies>
+	
+	<build>
+		<plugins>
+		  <plugin>
+			<artifactId>maven-assembly-plugin</artifactId>
+			<executions>
+			  <execution>
+				<phase>package</phase>
+				<goals>
+				  <goal>single</goal>
+				</goals>
+			  </execution>
+			</executions>
+			<configuration>
+			  <descriptorRefs>
+				<descriptorRef>jar-with-dependencies</descriptorRef>
+			  </descriptorRefs>
+			</configuration>
+		  </plugin>
+		  <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <configuration>
+                <mainClass>napominalka.Napominalka</mainClass>
+            </configuration>
+        </plugin>
+		
+		<!-- uncomment this to let maven describe warnings -->
+		<!-- <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<version>3.8.0</version>
+			<executions>
+				<execution>
+					<id>compile</id>
+					<phase>compile</phase>
+					<goals>
+						<goal>compile</goal>
+					</goals>
+				</execution>
+				<execution>
+					<id>testCompile</id>
+					<phase>test-compile</phase>
+					<goals>
+						<goal>testCompile</goal>
+					</goals>
+				</execution>
+			</executions>
+			<configuration>
+				<compilerArgument>-Xlint:all</compilerArgument>
+				<showWarnings>true</showWarnings>
+				<showDeprecation>true</showDeprecation>
+			</configuration>
+		</plugin> -->
+
+		</plugins>
+	</build>
+	
+</project>

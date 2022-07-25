@@ -1,1 +1,0 @@
-rmdir /S /Q classes & javac -cp lib\*;C:\TestJava\libs4log\* *.java -d classes && jar --create --file Napominalka.jar --manifest=MANIFEST.MF -C classes/ .

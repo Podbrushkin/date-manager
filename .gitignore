@@ -1,3 +1,1 @@
-*.class
-log4j2.xml
-NapominalkaFull.jar
+target/
