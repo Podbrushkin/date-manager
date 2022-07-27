@@ -11,7 +11,7 @@
 				charset="866" disableAnsi="false"/>
         </Console>
 		
-		<File name="LogToFile" fileName="NapomLogs/napominalka.log">
+		<File name="LogToFile" fileName="C:/Users/User/.napominalka/NapomLogs/napominalka.log">
             <PatternLayout>
                 <Pattern>[%level %d{dd-MM-yyyy HH:mm:ss} %logger{1}.%method()] %msg%n</Pattern>
             </PatternLayout>

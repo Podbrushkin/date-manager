@@ -1,5 +1,6 @@
 package napominalka;
 
+import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 import java.time.LocalDate;
 import java.nio.file.Path;
@@ -8,9 +9,8 @@ import java.io.IOException;
 import java.io.File;
 import javax.swing.JOptionPane;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class Exporter {
-	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	public static File dirForData = new File(System.getProperty("user.home")+File.separator+".napominalka");
 	private static File defaultDataFile = new File(dirForData, "data.tsv");
 	

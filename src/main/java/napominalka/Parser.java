@@ -1,7 +1,6 @@
 package napominalka;
 
-// import org.slf4j.*;
-import org.mozilla.universalchardet.UniversalDetector;
+import lombok.extern.slf4j.Slf4j;
 import com.github.sisyphsu.dateparser.DateParserUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,9 +23,8 @@ import java.io.BufferedReader;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class Parser {
-	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("ru"));
 	private DateTimeFormatter dtfAsIs = DateTimeFormatter.ofPattern("d LLLL yyyy", Locale.forLanguageTag("ru"));
 	
@@ -142,9 +140,9 @@ public class Parser {
 		log.info("parsing file:"+pathToFile);
 		Map<LocalDate, String> datesNames = new HashMap<LocalDate, String>();
 		try {
-			var ch1 = UniversalDetector.detectCharset(pathToFile);
-			Charset ch2 = Charset.forName(ch1);
-			Files.lines(pathToFile, ch2).forEach(line -> {
+			// var ch1 = UniversalDetector.detectCharset(pathToFile);
+			// Charset ch2 = Charset.forName(ch1);
+			Files.lines(pathToFile).forEach(line -> {
 				var entry = parseLine(line);
 				if (entry != null) datesNames.put(entry.getKey(), entry.getValue());
 			});
@@ -512,8 +510,8 @@ public class Parser {
 	public Map<LocalDate, String> parseTsv(Path file) {
 		try {
 			Map<LocalDate, String> datesNames = new TreeMap<>();
-			Charset charset = Charset.forName(UniversalDetector.detectCharset(file));
-			List<String> lines = Files.lines(file, charset).map(l -> l.strip()).filter(l -> l.length() > 3).toList();
+			// Charset charset = Charset.forName(UniversalDetector.detectCharset(file));
+			List<String> lines = Files.lines(file).map(l -> l.strip()).filter(l -> l.length() > 3).toList();
 			
 			for (String line : lines) {
 				

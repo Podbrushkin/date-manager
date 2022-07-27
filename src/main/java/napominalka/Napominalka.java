@@ -1,5 +1,6 @@
 package napominalka;
 
+import lombok.extern.slf4j.Slf4j;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.basic.BasicFileChooserUI;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,9 +21,8 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class Napominalka {
-	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private DatesNamesContainer container = new DatesNamesContainer();
 	// private TreeMap<LocalDate, String> datesNames = DatesNamesContainer.getDatesNames();
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -79,10 +80,13 @@ public class Napominalka {
 		} catch (Exception e) {e.printStackTrace();}
 		
 		setUIFont(new FontUIResource(scaledFont));
-		Runtime.getRuntime().addShutdownHook(new Thread(()->{
-			new Exporter().writeToFile(container.getDatesNames());
-			// System.out.println("textFields.size():"+textFields.size());
-		}));
+		
+		// I suspect this hook is responsible for erasing data.tsv 
+		//	when app is closed immediately after start.
+		// Runtime.getRuntime().addShutdownHook(new Thread(()->{
+			// new Exporter().writeToFile(container.getDatesNames());
+			// // System.out.println("textFields.size():"+textFields.size());
+		// }));
 		addTrayIcon();
 		frame = new JFrame("Напоминалка");
 		frame.addWindowStateListener(new WindowStateListener() {
@@ -312,13 +316,13 @@ public class Napominalka {
 				var autostartDirRel = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
 				var autostartDir = new File(System.getProperty("user.home") + autostartDirRel);
 				
-				if (autostartDir.isDirectory() && Arrays.toString(autostartDir.list()).contains("Napominalka")) {
-					log.info("App's link detected in autostart");
+				String shortcuts = Arrays.stream(autostartDir.listFiles())
+						.filter(f -> f.getName().toLowerCase().contains("napominalka"))
+						.map(Object::toString).collect(Collectors.joining(" "));
+				
+				if (shortcuts.toLowerCase().contains("napominalka")) {
+					log.info("App's link(s) detected in autostart: {}", shortcuts);
 					autostartItem.setState(true);
-					var lnkCandidates = Arrays.stream(autostartDir.listFiles()).filter(f -> f.getName().contains("Napominalka")).toList();
-					if (lnkCandidates.size()==1) {
-						
-					}
 				} else autostartItem.setState(false);
 				
 				

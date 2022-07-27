@@ -1,13 +1,13 @@
 package napominalka;
 
+import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.nio.file.Path;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class DatesNamesContainer {
-	// private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 	private Parser parser = new Parser();
 	private TreeMap<LocalDate, String> datesNames = new TreeMap<>();
 	
