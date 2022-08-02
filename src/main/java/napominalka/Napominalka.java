@@ -228,14 +228,13 @@ public class Napominalka {
 				var supportedFlavor = java.awt.datatransfer.DataFlavor.javaFileListFlavor;
 				if (evt.getCurrentDataFlavorsAsList().contains(supportedFlavor))
 					try {
-						// for (var flavor : evt.getCurrentDataFlavors()) System.out.println(flavor);
-						
 						evt.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
 						var droppedFiles = (java.util.List<File>)
 							evt.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
 						for (File file : droppedFiles) {
 							container.fillDatesNames(file.toPath());
 							addTextfieldsToPanelNew(mainPanel);
+							new Exporter().writeToFile(container.getDatesNames());
 							mainPanel.revalidate();
 						}
 						evt.dropComplete(true);
@@ -297,6 +296,7 @@ public class Napominalka {
 				int response = fileChooser.showOpenDialog(frame);
 				if (response == JFileChooser.APPROVE_OPTION) {
 					container.fillDatesNames(fileChooser.getSelectedFile().toPath());
+					new Exporter().writeToFile(container.getDatesNames());
 					addTextfieldsToPanelNew(mainPanel);
 					mainPanel.revalidate();
 				}
