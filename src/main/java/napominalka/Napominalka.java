@@ -28,7 +28,9 @@ public class Napominalka {
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private final Font defFont = Font.decode(null);
 	private float scaleRatio = Toolkit.getDefaultToolkit().getScreenResolution()/96;
-	private float scaleAdditional = 2.5f;
+	// private float scaleRatio = 1;
+	private float scaleAdditional = 1.1f;
+	// private float scaleAdditional = 1f;
 	private float newFontSize = defFont.getSize() * scaleRatio * scaleAdditional;
 	private JFrame frame;
 	
@@ -55,7 +57,8 @@ public class Napominalka {
 			System.exit(1);
 		}
 		
-		System.setProperty("sun.java2d.uiScale", "1");
+		// System.setProperty("sun.java2d.uiScale", "1");
+		// System.setProperty("sun.java2d.uiScale", "4");
 		if (args.length == 1 && args[0].equals("--hidden")) startHidden = true;
 		try {
 			// UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
@@ -79,7 +82,7 @@ public class Napominalka {
 			log.debug("path to jar:"+cur);
 		} catch (Exception e) {e.printStackTrace();}
 		
-		setUIFont(new FontUIResource(scaledFont));
+		// setUIFont(new FontUIResource(scaledFont));
 		
 		// I suspect this hook is responsible for erasing data.tsv 
 		//	when app is closed immediately after start.
@@ -113,12 +116,12 @@ public class Napominalka {
 		// JPanel background = new JPanel(layout);
 		JPanel background = new JPanel(new GridLayout(0,1));
 		// JPanel background = new JPanel(new FlowLayout());
-		background.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+		background.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 		
 		// GridLayout grid = new GridLayout(container.getDatesNames().size(), 2);
 		GridLayout grid = new GridLayout(0, 1);
-		grid.setVgap(10);
-		grid.setHgap(20);
+		// grid.setVgap(10);
+		// grid.setHgap(20);
 		mainPanel = new JPanel(grid);
 		// mainPanel = new JPanel();
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(0,0,20,0));
@@ -136,7 +139,7 @@ public class Napominalka {
 		
 		var jsp = new JScrollPane(mainPanel);
 		var jsbar = jsp.getVerticalScrollBar();
-		jsbar.setPreferredSize(new Dimension((int)(jsbar.getPreferredSize().getWidth()*scaleAdditional), 0));
+		// jsbar.setPreferredSize(new Dimension((int)(jsbar.getPreferredSize().getWidth()*scaleAdditional), 0));
 		jsbar.setUnitIncrement((int)newFontSize);
 		jsp.getHorizontalScrollBar().setUnitIncrement((int)newFontSize);
 		// jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -261,21 +264,21 @@ public class Napominalka {
 			SystemTray tray = SystemTray.getSystemTray();
 			
 			PopupMenu popup = new PopupMenu();
-			popup.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.6f));
+			// popup.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.6f));
 			
 			MenuItem importItem = new MenuItem("Импорт...");
 			importItem.addActionListener((ae) -> {
-				prepareFileChooser();
+				// prepareFileChooser();
 				var fileChooser = new JFileChooser();
 				// System.out.println("ui:"+fileChooser.getUI().getClass());
 				var fcUI = (BasicFileChooserUI) fileChooser.getUI();
 				// fcUI.getAccessoryPanel().removeAll();
-				var d = new Dimension((int)(screenSize.getWidth()*0.4), (int)(screenSize.getHeight()*0.5));
-				fileChooser.setPreferredSize(d);
+				// var d = new Dimension((int)(screenSize.getWidth()*0.4), (int)(screenSize.getHeight()*0.5));
+				// fileChooser.setPreferredSize(d);
 				// System.out.println(System.getProperty("os.name"));
 				if (System.getProperty("os.name").contains("Windows"))
 					fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")+File.separator+"Desktop"));
-				
+				/* if (false)
 				fileChooser.setFileView(new javax.swing.filechooser.FileView() {
 					public Icon getIcon(java.io.File f) {
 						var imgIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(f);
@@ -287,7 +290,7 @@ public class Napominalka {
 						// int size = UIManager.getInt("FileChooser.iconsSize");
 						return new ImageIcon(imgageIcon.getImage().getScaledInstance(w, h, Image.SCALE_DEFAULT));
 					}
-				});
+				}); */
 				
 				
 				// fileChooser.setFont(scaledFont.deriveFont(scaledFont.getSize()*0.01f));
@@ -434,7 +437,7 @@ public class Napominalka {
 		}
 	}
 	
-	private void prepareFileChooser() {
+	/* private void prepareFileChooser() {
 		boolean beenHere = (boolean) UIManager.get("FileChooser.readOnly");
 		if (beenHere) return;
 		UIManager.put("FileChooser.readOnly", Boolean.TRUE); 
@@ -477,7 +480,7 @@ public class Napominalka {
 			// System.out.printf("%s %s\n",key, value);
 		}
 		// lafDefaults.entrySet().forEach(e -> System.out.printf("%s = %s\n",e.getKey(),e.getValue()));
-	}
+	} */
 	
 	/* private class MyFileView extends javax.swing.filechooser.FileView {
 		static ImageIcon imgIcon = (ImageIcon) javax.swing.filechooser.FileSystemView.getFileSystemView().getSystemIcon(new java.io.File("."));
@@ -586,7 +589,8 @@ public class Napominalka {
 			
 			
 			this.dateTf = new JTextField(entry.getKey().format(DateTimeFormatter.ofPattern("d MMMM y")), 10);
-			dateTf.setMargin(new Insets(20,20,0,0));
+			dateTf.setFont(scaledFont);
+			// dateTf.setMargin(new Insets(20,20,0,0));
 			// dateTf.setMargin(new Insets(20,0,0,0));
 			dateTf.setEditable(false);
 			// dateTf.setInheritsPopupMenu(true);
@@ -642,7 +646,8 @@ public class Napominalka {
 			});
 			
 			this.nameTf = new JTextField(entry.getValue(), Math.max(10,(int)(descriptionMaxLength*0.63)));
-			nameTf.setMargin(new Insets(20,20,0,0));
+			nameTf.setFont(scaledFont);
+			// nameTf.setMargin(new Insets(20,20,0,0));
 			// nameTf.setMargin(new Insets(20,0,0,0));
 			nameTf.setEditable(false);
 			// nameTf.setInheritsPopupMenu(true);
